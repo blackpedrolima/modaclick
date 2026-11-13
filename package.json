@@ -1,9 +1,0 @@
-{
-  "name": "modaclick",
-  "private": true,
-  "description": "ModaClick — plataforma de moda com IA (site estático + funções da Vercel)",
-  "dependencies": {
-    "gradio-v2": "npm:@gradio/client@2.1.0",
-    "gradio-v1": "npm:@gradio/client@^1.0.0"
-  }
-}
