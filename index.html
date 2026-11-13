@@ -154,6 +154,20 @@
     .mini .foto { aspect-ratio: 1; background: var(--rosa-claro); cursor: pointer; }
     .mini .foto img { width: 100%; height: 100%; object-fit: cover; }
     .mini .info { padding: 8px 10px 10px; }
+    /* Looks sugeridos pela Moda Click IA */
+    .looks-ia { display: grid; gap: 12px; margin-top: 12px; }
+    .look-card { background: var(--branco); border: 1.5px solid var(--borda); border-radius: 16px; padding: 12px; box-shadow: var(--sombra); }
+    .look-card .look-topo strong { display: block; font-family: var(--titulo); font-size: 1.05rem; color: var(--rosa-escuro); }
+    .look-card .look-topo small { display: block; color: var(--texto-suave); font-size: .85rem; margin-top: 2px; line-height: 1.4; }
+    .look-pecas { display: flex; gap: 8px; overflow-x: auto; margin: 10px 0; padding-bottom: 4px; }
+    .look-peca { flex: 0 0 104px; cursor: pointer; border-radius: 12px; overflow: hidden; border: 1px solid var(--borda); background: var(--fundo); }
+    .look-peca .foto { aspect-ratio: 1; background: var(--rosa-claro); }
+    .look-peca .foto img { width: 100%; height: 100%; object-fit: cover; }
+    .look-peca .papel { display: block; padding: 5px 7px 0; font-size: .68rem; font-weight: 600; color: var(--rosa); text-transform: uppercase; letter-spacing: .03em; }
+    .look-peca .nome { display: block; padding: 0 7px 7px; font-size: .78rem; line-height: 1.25; }
+    .look-peca:hover { border-color: var(--rosa-suave); }
+    .look-acoes { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .look-acoes small { color: var(--texto-suave); font-size: .78rem; }
     .mini strong { display: block; font-size: .8rem; line-height: 1.3; margin-bottom: 6px; }
     .mini .botao { width: 100%; padding: 6px 8px; font-size: .75rem; }
     .digitando { align-self: flex-start; display: flex; gap: 5px; padding: 14px 18px; background: var(--fundo); border: 1px solid var(--borda); border-radius: 18px; }
@@ -869,12 +883,12 @@
 
   /* ======================== MODA CLICK IA ======================== */
   const SUGESTOES = [
-    'Monte um look para um jantar',
-    'Quero um look casual para o fim de semana',
-    'Que cores combinam com rosa?',
-    'Look para uma festa à noite',
-    'O que usar no trabalho?',
-    'Quais são as tendências do momento?'
+    'Monte um look para uma festa à noite',
+    'Look confortável para a escola',
+    'Tenho uma calça jeans preta. O que combina?',
+    'Look para um dia de muito calor',
+    'Complete o look que montei no provador',
+    'Que cores combinam com rosa?'
   ];
 
   function formatarTexto(t) {
@@ -899,6 +913,69 @@
       </div>`;
   }
 
+  // ----- Looks completos sugeridos pela IA -----
+  const PAPEL_LOOK = { unica: 'Peça única', cima: 'Parte de cima', baixo: 'Parte de baixo', terceira: 'Por cima' };
+  function pecasDoLookIA(l) {
+    const lista = [];
+    for (const k of ['unica', 'cima', 'baixo', 'terceira']) { const p = acharPeca(l[k]); if (p) lista.push({ papel: PAPEL_LOOK[k], peca: p }); }
+    for (const id of l.acessorios || []) { const p = acharPeca(id); if (p) lista.push({ papel: 'Acessório', peca: p }); }
+    return lista;
+  }
+  function lookCardHTML(l) {
+    const itens = pecasDoLookIA(l);
+    const provavel = acharPeca(l.unica) || acharPeca(l.cima) || acharPeca(l.baixo) || acharPeca(l.terceira);
+    const dados = esc(JSON.stringify({ nome: l.nome, unica: l.unica || '', cima: l.cima || '', baixo: l.baixo || '', terceira: l.terceira || '' }));
+    return `
+      <div class="look-card">
+        <div class="look-topo"><strong>✨ ${esc(l.nome || 'Look')}</strong>${l.porque ? `<small>${esc(l.porque)}</small>` : ''}</div>
+        <div class="look-pecas">${itens.map(({ papel, peca }) => `
+          <div class="look-peca" data-ver="${peca.id}" title="Ver ${esc(peca.nome)}">
+            <div class="foto">${fotoHTML(peca, 300)}</div>
+            <span class="papel">${papel}</span><span class="nome">${esc(peca.nome)}</span>
+          </div>`).join('')}
+        </div>
+        <div class="look-acoes">
+          ${provavel ? `<button class="botao pequeno" data-provar-look="${dados}">👗 Provar este look</button>` : ''}
+          ${itens.some(i => i.papel === 'Acessório') ? '<small>Acessórios aparecem só como dica: o provador troca as roupas.</small>' : ''}
+        </div>
+      </div>`;
+  }
+  function provarLookIA(l) {
+    const v = (id) => ({ tipo: 'catalogo', id });
+    const ok = (id) => podeProvar(acharPeca(id));
+    const avisos = [];
+    if (ok(l.unica)) {
+      definirPeca('unica', v(l.unica));
+      if (ok(l.terceira)) avisos.push('A jaqueta é para usar por cima: no provador entra a peça única.');
+    } else {
+      const cima = ok(l.cima) ? l.cima : (ok(l.terceira) ? l.terceira : '');
+      if (cima) definirPeca('cima', v(cima));
+      if (ok(l.baixo)) definirPeca('baixo', v(l.baixo));
+      if (ok(l.cima) && ok(l.terceira)) avisos.push('A jaqueta é para usar por cima: no provador entra a parte de cima principal.');
+    }
+    if (!estado.provador.gerando) { estado.provador.resultado = null; mostrarEtapa('form'); }
+    navegar('provador');
+    avisar(`O look "${l.nome || 'da Moda Click IA'}" foi para o Provador. Agora é só enviar sua foto. ${avisos.join(' ')}`.trim());
+  }
+  // Resumo dos looks para a IA lembrar o que já sugeriu
+  function resumoLooks(msg) {
+    const looks = (msg.looks || []).map(l => `${l.nome}: ${pecasDoLookIA(l).map(i => i.peca.id).join(' + ')}`);
+    return looks.length ? `\n[Looks sugeridos: ${looks.join(' | ')}]` : '';
+  }
+  function lookAtualParaIA() {
+    const saida = {};
+    for (const espaco of ['cima', 'baixo', 'unica']) {
+      const v = estado.look && estado.look[espaco];
+      saida[espaco] = !v ? null : (v.tipo === 'catalogo' ? { id: v.id } : { foto: true });
+    }
+    return saida;
+  }
+  function mostrarSugestoes(lista) {
+    lista = (lista || []).filter(Boolean);
+    $('#sugestoes').innerHTML = lista.map(s => `<button class="chip" data-sugestao="${esc(s)}">${esc(s)}</button>`).join('');
+    $('#sugestoes').hidden = !lista.length;
+  }
+
   function adicionarBolha(msg) {
     const caixa = $('#mensagens');
     const d = document.createElement('div');
@@ -911,7 +988,10 @@
     } else {
       d.className = 'msg ia';
       const pecas = (msg.pecas || []).map(acharPeca).filter(Boolean);
-      d.innerHTML = formatarTexto(msg.texto) + (pecas.length ? `<div class="recomendadas">${pecas.map(miniCardHTML).join('')}</div>` : '');
+      const looks = (msg.looks || []).filter(l => pecasDoLookIA(l).length);
+      d.innerHTML = formatarTexto(msg.texto)
+        + (looks.length ? `<div class="looks-ia">${looks.map(lookCardHTML).join('')}</div>` : '')
+        + (pecas.length ? `<div class="recomendadas">${pecas.map(miniCardHTML).join('')}</div>` : '');
     }
     caixa.appendChild(d);
     caixa.scrollTop = caixa.scrollHeight;
@@ -922,12 +1002,11 @@
     $('#mensagens').innerHTML = '';
     const boasVindas = {
       autor: 'ia',
-      texto: 'Oi! Eu sou a **Moda Click IA** 🌸\nPosso montar looks para qualquer ocasião, sugerir cores que combinam e indicar peças do nosso catálogo para você experimentar no Provador Virtual. Como posso ajudar?',
+      texto: 'Oi! Eu sou a **Moda Click IA** 🌸\nMe conta a ocasião, o seu estilo ou uma peça que você já tem, e eu monto looks completos com peças do catálogo. Depois é só clicar em **Provar este look** para ver em você no Provador Virtual. Como posso ajudar?',
       pecas: []
     };
     adicionarBolha(boasVindas);
-    $('#sugestoes').innerHTML = SUGESTOES.map(s => `<button class="chip" data-sugestao="${esc(s)}">${esc(s)}</button>`).join('');
-    $('#sugestoes').hidden = false;
+    mostrarSugestoes(SUGESTOES);
   }
 
   function enderecoChat() {
@@ -975,17 +1054,19 @@
         headers: { 'Content-Type': 'application/json' },
         signal: controle.signal,
         body: JSON.stringify({
-          mensagens: estado.conversa.filter(m => m.autor !== 'erro').map(m => ({ autor: m.autor, texto: m.texto })),
-          catalogo: CATALOGO.map(p => ({ id: p.id, nome: p.nome, categoria: p.categoria, cores: p.cores, estilo: p.estilo }))
+          mensagens: estado.conversa.filter(m => m.autor !== 'erro').map(m => ({ autor: m.autor, texto: m.texto + (m.autor === 'ia' ? resumoLooks(m) : '') })),
+          catalogo: CATALOGO.map(p => ({ id: p.id, nome: p.nome, categoria: p.categoria, cores: p.cores, estilo: p.estilo, descricao: p.descricao })),
+          lookAtual: lookAtualParaIA()
         })
       });
       const dados = await resp.json().catch(() => ({}));
       if (!resp.ok) throw new Error(dados.erro || `Erro ${resp.status}`);
 
-      const msgIA = { autor: 'ia', texto: dados.resposta, pecas: (dados.pecas || []).filter(acharPeca) };
+      const msgIA = { autor: 'ia', texto: dados.resposta, pecas: (dados.pecas || []).filter(acharPeca), looks: Array.isArray(dados.looks) ? dados.looks : [] };
       estado.conversa.push(msgIA);
       digitando.remove();
       adicionarBolha(msgIA);
+      mostrarSugestoes(dados.sugestoes);
     } catch (e) {
       digitando.remove();
       const texto = e.name === 'AbortError'
@@ -1017,9 +1098,11 @@
   });
   $('#novaConversa').addEventListener('click', iniciarConversa);
   $('#mensagens').addEventListener('click', (e) => {
+    const provarLook = e.target.closest('[data-provar-look]');
     const provar = e.target.closest('[data-provar]');
     const ver = e.target.closest('[data-ver]');
     const repetir = e.target.closest('[data-repetir]');
+    if (provarLook) { try { return provarLookIA(JSON.parse(provarLook.dataset.provarLook)); } catch { return; } }
     if (provar) return selecionarParaProvador(provar.dataset.provar);
     if (ver) return navegar('roupas/' + ver.dataset.ver);
     if (repetir && !estado.enviando) { repetir.closest('.msg').remove(); pedirResposta(); }
