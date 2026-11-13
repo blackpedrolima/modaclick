@@ -45,11 +45,15 @@ function origemPermitida(req) {
 
 // Duas versões da biblioteca oficial do Gradio: a nova e a anterior (para espaços mais antigos)
 async function bibliotecas() {
-  const libs = [];
-  for (const [nome, pacote] of [['2.1.0', 'gradio-v2'], ['1.x', 'gradio-v1']]) {
-    try { libs.push({ nome, lib: await import(pacote) }); } catch (e) { console.log('Biblioteca não carregou:', pacote, e && e.message); }
-  }
-  if (!libs.length) throw new ErroAmigavel('O servidor não encontrou a biblioteca do Hugging Face (faltou o package.json no deploy?).', 500);
+  // Os nomes precisam estar escritos por extenso: a Vercel só inclui no servidor
+  // as bibliotecas que ela consegue "ler" no código.
+  const libs = [], falhas = [];
+  try { libs.push({ nome: '2.1.0', lib: await import('gradio-v2') }); }
+  catch (e) { falhas.push('gradio-v2: ' + (e && e.message)); }
+  try { libs.push({ nome: '1.x', lib: await import('gradio-v1') }); }
+  catch (e) { falhas.push('gradio-v1: ' + (e && e.message)); }
+  if (falhas.length) console.log('Biblioteca não carregou:', falhas.join(' | '));
+  if (!libs.length) throw new ErroAmigavel('O servidor não encontrou a biblioteca do Hugging Face. Detalhe: ' + falhas.join(' | ').slice(0, 400), 500);
   return libs;
 }
 
