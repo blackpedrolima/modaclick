@@ -214,6 +214,27 @@
     .comparacao img { width: 100%; height: 100%; object-fit: contain; background: var(--branco); }
     .comparacao figcaption { position: absolute; left: 10px; bottom: 10px; background: rgba(255,255,255,.95); border-radius: 999px; padding: 4px 12px; font-size: .78rem; font-weight: 600; color: var(--rosa-escuro); }
     .faixa-teste { background: #fff8e6; border: 1.5px dashed #e8b84a; color: #6b4a00; border-radius: 14px; padding: 10px 14px; font-size: .86rem; font-weight: 600; text-align: center; margin-bottom: 12px; }
+    .espacos-look { display: flex; flex-direction: column; gap: 10px; }
+    .espaco-look { display: flex; gap: 12px; align-items: stretch; background: var(--fundo); border: 1.5px dashed var(--rosa-suave); border-radius: 16px; padding: 10px; transition: border-color .2s, background .2s; }
+    .espaco-look.cheio { border-style: solid; border-color: var(--borda); background: var(--branco); }
+    .espaco-look.arrastando { border-color: var(--rosa); background: var(--rosa-claro); }
+    .espaco-foto { width: 86px; flex-shrink: 0; aspect-ratio: 3/4; border-radius: 12px; overflow: hidden; background: var(--branco); display: grid; place-items: center; }
+    .espaco-foto img { width: 100%; height: 100%; object-fit: cover; }
+    .espaco-foto svg { width: 44px; height: 44px; }
+    .espaco-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+    .espaco-info small { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--rosa-escuro); }
+    .espaco-info strong { font-size: .92rem; line-height: 1.3; }
+    .espaco-info .dica { font-size: .78rem; color: var(--texto-suave); margin-bottom: 6px; }
+    .espaco-info .acoes-foto .botao { padding: 6px 10px; font-size: .78rem; flex: 0 1 auto; }
+    .ou-look { display: flex; align-items: center; gap: 10px; color: var(--texto-suave); font-size: .78rem; font-weight: 600; text-transform: uppercase; }
+    .ou-look::before, .ou-look::after { content: ''; flex: 1; height: 1px; background: var(--borda); }
+    .etapas-look { list-style: none; display: flex; flex-direction: column; gap: 6px; text-align: left; font-size: .86rem; color: var(--texto-suave); }
+    .etapas-look li { display: flex; align-items: center; gap: 8px; }
+    .etapas-look li.agora { color: var(--rosa-escuro); }
+    .etapas-look li.feita { color: #1f8a55; }
+    .bolinha-etapa { width: 22px; height: 22px; border-radius: 50%; border: 2px solid currentColor; display: grid; place-items: center; font-size: .72rem; font-weight: 700; flex-shrink: 0; }
+    .etapas-look li.agora .bolinha-etapa { animation: pulsar 1.4s ease-in-out infinite; }
+    .resultado .mia-comparar { max-height: 76vh; }
     .consentimento { display: flex; gap: 12px; align-items: flex-start; background: var(--branco); border: 1.5px solid var(--borda); border-radius: 16px; padding: 14px 16px; margin-bottom: 18px; cursor: pointer; font-size: .88rem; color: var(--texto-suave); transition: border-color .2s; }
     .consentimento:hover { border-color: var(--rosa-suave); }
     .consentimento.marcado { border-color: var(--rosa); background: #fffafc; }
@@ -441,8 +462,8 @@
   <main class="aba" id="aba-provador">
     <section class="hero">
       <span class="selo">✨ Provador Virtual com IA</span>
-      <h1>Experimente a roupa <span>em você</span></h1>
-      <p>Envie a foto da roupa e uma foto sua de corpo inteiro. A inteligência artificial cria uma nova imagem com você vestindo a peça, mantendo seu rosto, cabelo e jeito.</p>
+      <h1>Monte o look e <span>experimente em você</span></h1>
+      <p>Escolha uma ou mais peças (do catálogo ou fotos suas) e envie uma foto de corpo inteiro. A IA troca as roupas da foto pelas peças escolhidas, uma de cada vez, mantendo seu rosto, cabelo e jeito.</p>
     </section>
 
     <section class="container provador-area">
@@ -479,7 +500,8 @@
         <h2>A IA está criando seu look</h2>
         <p class="msg-carregando" id="msgCarregando">Enviando suas fotos com segurança…</p>
         <div class="progresso"><div id="barraProgresso"></div></div>
-        <span class="tempo" id="tempoDecorrido">Costuma levar de 10 a 40 segundos.</span>
+        <ol class="etapas-look" id="etapasLook"></ol>
+        <span class="tempo" id="tempoDecorrido">Cada peça leva de 30 segundos a alguns minutos.</span>
         <div class="miniaturas" id="miniCarregando"></div>
         <button class="botao leve pequeno" id="cancelarGeracao">Cancelar</button>
       </div>
@@ -493,7 +515,7 @@
       <input type="file" id="inPessoaCamera" accept="image/*" capture="user" hidden>
       <input type="file" id="inPessoaGaleria" accept="image/jpeg,image/png,image/webp" hidden>
 
-      <p class="aviso">A prova virtual é feita por uma API de IA especializada (FASHN ou WeShop), chamada pelo servidor do ModaClick. As chaves ficam protegidas no servidor e as fotos não são guardadas pelo ModaClick. Sem servidor, a opção gratuita usa um espaço público do Hugging Face (IDM-VTON).</p>
+      <p class="aviso">A IA gratuita usa espaços públicos do Hugging Face (IDM-VTON e OOTDiffusion), chamados direto do navegador. A opção pelo servidor usa a FASHN, com a chave protegida no servidor. O ModaClick não guarda as fotos.</p>
     </section>
   </main>
 
@@ -607,7 +629,7 @@
        2) cópia local em img/<id>.jpg (se a pasta img/ existir no site)
        3) imagem padrão do ModaClick (nunca fica um espaço vazio)
      Obs.: a prévia de arquivos do Claude bloqueia imagens de outros sites
-     (a mesma regra de segurança que bloqueava o iframe da WeShop). Por isso,
+     (a mesma regra de segurança que bloqueia iframes e conexões externas). Por isso,
      lá aparece a imagem padrão; num navegador normal ou na Vercel as fotos carregam. */
   const FOTO_PADRAO = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 400"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff7fa"/><stop offset="1" stop-color="#fde4ee"/></linearGradient></defs>' +
@@ -663,7 +685,6 @@
   /* =========================== Estado =========================== */
   const estado = {
     filtros: { busca: '', categoria: 'Todas', tamanho: '', cor: '', estilo: '' },
-    pecaSelecionada: guardar.ler('pecaSelecionada'),
     conversa: [],
     enviando: false
   };
@@ -673,12 +694,11 @@
     const peca = acharPeca(id);
     if (!peca) return;
     if (!podeProvar(peca)) { avisar('Acessórios ainda não podem ser provados virtualmente.'); return; }
-    estado.pecaSelecionada = id;
-    if (estado.provador) { estado.provador.fonteRoupa = 'catalogo'; if (!estado.provador.gerando) mostrarEtapa('form'); }
-    guardar.salvar('pecaSelecionada', id);
-    atualizarPontinho();
+    const espaco = ESPACO_DA_CATEGORIA[CATEGORIA_TRYON[peca.categoria]];
+    const avisos = definirPeca(espaco, { tipo: 'catalogo', id });
+    if (!estado.provador.gerando) { estado.provador.resultado = null; mostrarEtapa('form'); }
     navegar('provador');
-    avisar('Peça pronta no Provador Virtual ✨ Agora envie sua foto.');
+    avisar(`${peca.nome} entrou no look (${tituloEspaco(espaco).toLowerCase()}). ${avisos.join(' ')}`.trim());
   }
 
   function perguntarSobre(id) {
@@ -689,7 +709,7 @@
   }
 
   function atualizarPontinho() {
-    $('#pontinhoProvador').classList.toggle('on', !!estado.pecaSelecionada);
+    $('#pontinhoProvador').classList.toggle('on', !!(estado.look && (estado.look.cima || estado.look.baixo || estado.look.unica)));
   }
 
   /* =========================== INÍCIO =========================== */
@@ -779,7 +799,7 @@
           <p>${esc(p.descricao)}</p>
           <div class="acoes">
             <button class="botao leve" data-acao="ver">Ver detalhes</button>
-            ${podeProvar(p) ? '<button class="botao" data-acao="provar">✨ Experimentar virtualmente</button>' : ''}
+            ${podeProvar(p) ? '<button class="botao" data-acao="provar">➕ Adicionar ao look</button>' : ''}
           </div>
         </div>
       </article>`;
@@ -822,7 +842,7 @@
           </div>
           <p class="aviso-preco">💡 Peça de inspiração do catálogo ModaClick: sem preço e sem loja vinculada.</p>
           <div class="acoes">
-            ${podeProvar(p) ? `<button class="botao" data-modal-ia="${p.id}">🪄 Experimentar com IA</button><button class="botao leve" data-provar="${p.id}">✨ Provador completo</button>` : '<span class="aviso-preco" style="margin:0">Acessórios ainda não podem ser provados virtualmente.</span>'}
+            ${podeProvar(p) ? `<button class="botao" data-modal-ia="${p.id}">🪄 Experimentar com IA</button><button class="botao leve" data-provar="${p.id}">➕ Adicionar ao look</button>` : '<span class="aviso-preco" style="margin:0">Acessórios ainda não podem ser provados virtualmente.</span>'}
             <button class="botao leve" data-perguntar="${p.id}">💬 O que combina com ela?</button>
           </div>
           <p class="credito">Foto: <a href="${urlCredito(p)}" target="_blank" rel="noopener">Unsplash</a></p>
@@ -1005,60 +1025,110 @@
     if (repetir && !estado.enviando) { repetir.closest('.msg').remove(); pedirResposta(); }
   });
 
-  /* ======================== PROVADOR VIRTUAL ======================== */
+  /* ======================== PROVADOR VIRTUAL · LOOK COMPLETO ======================== */
   /*
-   * Prova virtual REAL com IA. Quem chama a IA é o servidor do ModaClick
-   * (api/provador.js), que usa a API da FASHN ou da WeShop com a chave guardada
-   * em variável de ambiente. Este arquivo nunca vê a chave.
+   * O cliente monta um look com até três "espaços":
+   *   • Parte de cima   (camiseta, blusa, jaqueta, casaco)
+   *   • Parte de baixo  (calça, saia, short)
+   *   • Peça única      (vestido, macacão, conjunto) — substitui cima e baixo
+   * Cada peça vem do catálogo ou de uma foto (câmera ou galeria).
    *
-   * Privacidade: as fotos ficam só na memória desta página (nada vai para o
-   * localStorage nem é salvo no servidor). Só são enviadas depois que a pessoa
-   * marca a autorização.
+   * A IA aplica as peças UMA DE CADA VEZ na foto da pessoa:
+   *   1º parte de baixo → 2º parte de cima (sobre o resultado da 1ª)   ou   só a peça única
+   *
+   * Motores:
+   *   'gratuita' → Hugging Face direto do navegador (sem servidor e sem chave):
+   *                parte de cima = IDM-VTON · parte de baixo e peça única = OOTDiffusion
+   *   'servidor' → FASHN pelo servidor do site (api/provador.js, chave paga FASHN_API_KEY)
+   *   'comparar' → teste sem IA: só mostra as fotos lado a lado
+   *
+   * Privacidade: as fotos ficam só na memória desta página e só são enviadas
+   * depois que a pessoa marca a autorização.
    */
   const PROVADOR = {
-    API: '/api/provador',        // em srcdoc ou arquivo local, use o endereço completo:
-                                 // 'https://seu-site.vercel.app/api/provador'
-    INTERVALO_CONSULTA: 2500,    // pergunta ao servidor se a imagem ficou pronta
-    TEMPO_LIMITE: 180000,        // desiste depois de 3 minutos
-    TEMPO_ESPERADO: 25000,       // usado só para a barra de progresso
-    INTERVALO_MSG: 3000,
-    // IA gratuita que funciona direto do navegador, SEM servidor (abrindo o index.html):
-    ESPACO_HF: 'yisol/IDM-VTON',  // espaço público do Hugging Face (troca peças da parte de cima)
+    API: '/api/provador',            // servidor do site (Vercel). Em arquivo local use o endereço completo.
     URL_GRADIO: 'https://cdn.jsdelivr.net/npm/@gradio/client@2.1.0/dist/index.min.js',
-    LADO_MAXIMO: 1280,           // reduz as fotos antes de enviar
-    LADO_MINIMO: 400,            // fotos menores que isso ficam ruins na IA
+    ESPACO_CIMA: 'yisol/IDM-VTON',           // IA gratuita para a parte de cima
+    ESPACO_CORPO: 'levihsu/OOTDiffusion',    // IA gratuita para parte de baixo e peça única
+    INTERVALO_CONSULTA: 2500,
+    TEMPO_LIMITE: 180000,
+    INTERVALO_MSG: 3500,
+    LADO_MAXIMO: 1280,
+    LADO_MINIMO: 400,
     TAMANHO_MAX: 15 * 1024 * 1024
   };
 
-  const MENSAGENS_CARREGANDO = [
-    'Enviando suas fotos com segurança…',
-    'Reconhecendo o corpo e a pose…',
-    'Analisando cores, estampa e detalhes da peça…',
-    'Vestindo a roupa no seu corpo…',
-    'Finalizando a imagem…'
-  ];
-
-  // Categorias do catálogo → categorias da IA de prova virtual
+  // Categorias do catálogo → tipo de peça para a IA
   const CATEGORIA_TRYON = { Camisetas: 'tops', Blusas: 'tops', Jaquetas: 'tops', Calças: 'bottoms', Saias: 'bottoms', Vestidos: 'one-pieces', Conjuntos: 'one-pieces' };
   const podeProvar = (p) => !!(p && CATEGORIA_TRYON[p.categoria]);
+  const ESPACOS = [
+    { id: 'cima', titulo: 'Parte de cima', exemplo: 'camiseta, blusa, jaqueta, casaco', categoria: 'tops' },
+    { id: 'baixo', titulo: 'Parte de baixo', exemplo: 'calça, saia, short', categoria: 'bottoms' },
+    { id: 'unica', titulo: 'Peça única', exemplo: 'vestido, macacão, conjunto', categoria: 'one-pieces' }
+  ];
+  const ESPACO_DA_CATEGORIA = { tops: 'cima', bottoms: 'baixo', 'one-pieces': 'unica' };
+  const tituloEspaco = (id) => ESPACOS.find(e => e.id === id).titulo;
 
   const ICONE_ROUPA = '<svg viewBox="0 0 64 64" fill="none" stroke="#e8518a" stroke-width="2.2" stroke-linejoin="round"><path d="M24 8c2 4 5 6 8 6s6-2 8-6l12 6 6 14-9 4-3-6v30H18V26l-3 6-9-4 6-14 12-6Z" fill="#fde4ee"/></svg>';
+  const ICONE_CALCA = '<svg viewBox="0 0 64 64" fill="none" stroke="#e8518a" stroke-width="2.2" stroke-linejoin="round"><path d="M18 6h28l4 52H38L32 24l-6 34H14Z" fill="#fde4ee"/></svg>';
+  const ICONE_VESTIDO = '<svg viewBox="0 0 64 64" fill="none" stroke="#e8518a" stroke-width="2.2" stroke-linejoin="round"><path d="M24 6h16l-2 12 14 40H12l14-40Z" fill="#fde4ee"/></svg>';
   const ICONE_PESSOA = '<svg viewBox="0 0 64 64" fill="none" stroke="#e8518a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="32" cy="12" r="7" fill="#fde4ee"/><path d="M20 30c0-6 5-10 12-10s12 4 12 10v10h-6l-2 20h-8l-2-20h-6V30Z" fill="#fde4ee"/></svg>';
+  const ICONES_ESPACO = { cima: ICONE_ROUPA, baixo: ICONE_CALCA, unica: ICONE_VESTIDO };
+
+  // O look: peças do catálogo ficam salvas no navegador; fotos enviadas, não.
+  estado.look = (() => {
+    const salvo = guardar.ler('look') || {};
+    const look = { cima: null, baixo: null, unica: null };
+    for (const id of Object.keys(look)) {
+      const v = salvo[id];
+      if (v && v.tipo === 'catalogo' && podeProvar(acharPeca(v.id))) look[id] = { tipo: 'catalogo', id: v.id };
+    }
+    const antiga = guardar.ler('pecaSelecionada');                 // versão anterior do site
+    const pAntiga = acharPeca(antiga);
+    if (pAntiga && podeProvar(pAntiga) && !look.cima && !look.baixo && !look.unica) look[ESPACO_DA_CATEGORIA[CATEGORIA_TRYON[pAntiga.categoria]]] = { tipo: 'catalogo', id: antiga };
+    return look;
+  })();
 
   estado.provador = {
-    pessoa: null,            // dataURL da foto da pessoa (só na memória)
-    roupaFoto: null,         // dataURL da foto de roupa enviada
-    fonteRoupa: 'catalogo',  // 'catalogo' ou 'upload'
-    consentimento: false,
-    gerando: false,
-    cancelado: false,
-    resultado: null,
-    conexao: null,           // null | 'ok' | 'sem-servidor' | 'sem-chave' | 'offline'
-    motor: null,             // null (automático) | 'servidor' | 'huggingface' | 'comparar'
-    tokenHF: ''              // token opcional do Hugging Face (só na memória)
+    pessoa: null, consentimento: false, gerando: false, cancelado: false, tentativa: 0,
+    resultado: null, conexao: null, motor: null, tokenHF: '', alvoUpload: null, visao: 'deslizar'
   };
 
   const esperar = (ms) => new Promise(r => setTimeout(r, ms));
+
+  function salvarLook() {
+    const s = {};
+    for (const [k, v] of Object.entries(estado.look)) s[k] = v && v.tipo === 'catalogo' ? v : null;
+    guardar.salvar('look', s);
+    guardar.salvar('pecaSelecionada', null);
+  }
+
+  // Coloca uma peça num espaço (peça única e cima/baixo não combinam)
+  function definirPeca(espaco, valor) {
+    const look = estado.look;
+    const avisos = [];
+    if (valor && espaco === 'unica' && (look.cima || look.baixo)) { look.cima = null; look.baixo = null; avisos.push('A peça única substitui a parte de cima e a de baixo.'); }
+    if (valor && espaco !== 'unica' && look.unica) { look.unica = null; avisos.push('A peça única foi retirada para combinar parte de cima e de baixo.'); }
+    look[espaco] = valor;
+    salvarLook();
+    atualizarPontinho();
+    return avisos;
+  }
+
+  function pecaDoEspaco(espaco) {
+    const v = estado.look[espaco];
+    if (!v) return null;
+    const categoria = ESPACOS.find(e => e.id === espaco).categoria;
+    if (v.tipo === 'upload') return { tipo: 'upload', imagem: v.imagem, nome: `Sua foto (${tituloEspaco(espaco).toLowerCase()})`, categoria, espaco };
+    const p = acharPeca(v.id);
+    return p ? { tipo: 'catalogo', peca: p, imagem: urlFoto(p, 1200), nome: p.nome, categoria, espaco } : null;
+  }
+
+  // Ordem de aplicação: parte de baixo → parte de cima (ou só a peça única)
+  function pecasDoLook() {
+    if (estado.look.unica) return [pecaDoEspaco('unica')].filter(Boolean);
+    return [pecaDoEspaco('baixo'), pecaDoEspaco('cima')].filter(Boolean);
+  }
 
   /* ---------- Ler, validar e reduzir a foto ---------- */
   function lerImagem(arquivo) {
@@ -1096,7 +1166,10 @@
     try {
       const dataUrl = await lerImagem(arquivo);
       if (tipo === 'pessoa') estado.provador.pessoa = dataUrl;
-      else { estado.provador.roupaFoto = dataUrl; estado.provador.fonteRoupa = 'upload'; }
+      else {
+        const avisos = definirPeca(tipo, { tipo: 'upload', imagem: dataUrl });
+        if (avisos.length) avisar(avisos.join(' '));
+      }
       renderProvador();
     } catch (e) {
       mostrarErro(e.message);
@@ -1105,56 +1178,45 @@
 
   [['#inRoupaCamera', 'roupa'], ['#inRoupaGaleria', 'roupa'], ['#inPessoaCamera', 'pessoa'], ['#inPessoaGaleria', 'pessoa']].forEach(([sel, tipo]) => {
     const input = $(sel);
-    input.addEventListener('change', () => { if (input.files[0]) receberFoto(input.files[0], tipo); input.value = ''; });
+    input.addEventListener('change', () => {
+      if (input.files[0]) receberFoto(input.files[0], tipo === 'roupa' ? (estado.provador.alvoUpload || 'cima') : 'pessoa');
+      input.value = '';
+    });
   });
 
-  /* ---------- O que está escolhido ---------- */
-  function roupaAtual() {
-    const pv = estado.provador;
-    if (pv.fonteRoupa === 'upload') {
-      return pv.roupaFoto ? { tipo: 'upload', imagem: pv.roupaFoto, nome: 'Sua foto de roupa', categoria: 'auto' } : null;
-    }
-    const p = acharPeca(estado.pecaSelecionada);
-    if (!podeProvar(p)) return null;
-    return { tipo: 'catalogo', peca: p, imagem: urlFoto(p, 1200), nome: p.nome, categoria: CATEGORIA_TRYON[p.categoria] };
+  /* ---------- Desenho: espaços do look ---------- */
+  function espacoHTML(e) {
+    const r = pecaDoEspaco(e.id);
+    const foto = r ? (r.tipo === 'catalogo' ? fotoHTML(r.peca, 400) : `<img src="${r.imagem}" alt="${esc(r.nome)}">`) : ICONES_ESPACO[e.id];
+    const botoes = r
+      ? `<button class="botao leve pequeno" data-rota="roupas">👚 Trocar</button>
+         <button class="botao leve pequeno" data-foto="galeria" data-espaco="${e.id}">🖼️ Minha foto</button>
+         <button class="botao leve pequeno perigo" data-foto="remover" data-espaco="${e.id}">Remover</button>`
+      : `<button class="botao leve pequeno" data-rota="roupas">👚 Catálogo</button>
+         <button class="botao leve pequeno" data-foto="camera" data-espaco="${e.id}">📷 Foto</button>
+         <button class="botao leve pequeno" data-foto="galeria" data-espaco="${e.id}">🖼️ Galeria</button>`;
+    return `
+      <div class="espaco-look${r ? ' cheio' : ''}" data-espaco-look="${e.id}" data-soltar="${e.id}">
+        <div class="espaco-foto">${foto}</div>
+        <div class="espaco-info">
+          <small>${e.titulo}</small>
+          <strong>${r ? esc(r.nome) : 'Vazio'}</strong>
+          <span class="dica">${r ? (r.tipo === 'catalogo' ? 'Do catálogo' : 'Foto enviada por você') : esc(e.exemplo)}</span>
+          <div class="acoes-foto">${botoes}</div>
+        </div>
+      </div>`;
   }
 
-  function miniaturasHTML() {
-    const r = roupaAtual();
-    const pessoa = estado.provador.pessoa;
-    const fotoRoupa = r ? (r.tipo === 'catalogo' ? fotoHTML(r.peca, 200) : `<img src="${r.imagem}" alt="Roupa">`) : '';
-    return `<div class="mini-foto">${fotoRoupa}</div><span>＋</span><div class="mini-foto">${pessoa ? `<img src="${pessoa}" alt="Sua foto">` : ''}</div>`;
-  }
-
-  /* ---------- Painéis das fotos ---------- */
-  function painelRoupaHTML() {
-    const pv = estado.provador;
-    const p = acharPeca(estado.pecaSelecionada);
-    const titulo = (ok) => `<div class="painel-titulo"><span class="num">1</span><h3>Foto da roupa</h3>${ok ? '<span class="ok">✓ pronta</span>' : ''}</div>`;
-    const botoesEnviar = `
-      <button class="botao leve pequeno" data-foto="roupa-camera">📷 Tirar foto</button>
-      <button class="botao leve pequeno" data-foto="roupa-galeria">🖼️ Galeria</button>`;
-
-    if (pv.fonteRoupa === 'upload' && pv.roupaFoto) {
-      return `${titulo(true)}
-        <div class="preview"><img src="${pv.roupaFoto}" alt="Foto da roupa enviada"><div class="rotulo"><small>Sua foto</small>Peça enviada por você</div></div>
-        <div class="acoes-foto">${botoesEnviar.replace('Tirar foto', 'Nova foto').replace('Galeria', 'Trocar')}<button class="botao leve pequeno perigo" data-foto="roupa-remover">Remover</button></div>`;
-    }
-    if (podeProvar(p)) {
-      return `${titulo(true)}
-        <div class="preview" id="roupaCatalogo">${fotoHTML(p, 900)}<div class="rotulo"><small>Do catálogo</small>${esc(p.nome)}</div></div>
-        <div class="acoes-foto">
-          <button class="botao leve pequeno" data-rota="roupas">👚 Trocar peça</button>
-          <button class="botao leve pequeno" data-foto="roupa-galeria">🖼️ Usar minha foto</button>
-          <button class="botao leve pequeno perigo" data-foto="roupa-remover">Remover</button>
-        </div>`;
-    }
-    const aviso = p && !podeProvar(p)
-      ? `<p class="dica">"${esc(p.nome)}" é um acessório, e a prova virtual funciona com roupas (blusas, calças, saias, vestidos, jaquetas e conjuntos).</p>` : '';
-    return `${titulo(false)}
-      <p class="dica">Tire uma foto da peça, escolha da galeria ou selecione uma roupa do catálogo.</p>${aviso}
-      <div class="preview aguardando" data-soltar="roupa">${ICONE_ROUPA}<strong>Arraste a foto da roupa aqui</strong><small>A peça sozinha (estendida ou no cabide) ou vestida em alguém</small></div>
-      <div class="acoes-foto">${botoesEnviar}<button class="botao pequeno" data-rota="roupas">👚 Catálogo</button></div>`;
+  function painelLookHTML() {
+    const n = pecasDoLook().length;
+    return `
+      <div class="painel-titulo"><span class="num">1</span><h3>Monte o look</h3>${n ? `<span class="ok">✓ ${n} ${n === 1 ? 'peça' : 'peças'}</span>` : ''}</div>
+      <p class="dica">Escolha no catálogo ou envie fotos das roupas. Combine parte de cima + parte de baixo, ou use uma peça única.</p>
+      <div class="espacos-look" id="roupaCatalogo">
+        ${ESPACOS.slice(0, 2).map(espacoHTML).join('')}
+        <div class="ou-look"><span>ou</span></div>
+        ${espacoHTML(ESPACOS[2])}
+      </div>`;
   }
 
   function painelPessoaHTML() {
@@ -1170,7 +1232,7 @@
         </div>`;
     }
     return `${titulo}
-      <p class="dica">De corpo inteiro, de frente, com boa luz e só uma pessoa na foto. Roupas justas ajudam a IA a entender o corpo.</p>
+      <p class="dica">De corpo inteiro, de frente, em pé, com boa luz e só uma pessoa na foto. Roupas justas ajudam a IA a entender o corpo.</p>
       <div class="preview aguardando" data-soltar="pessoa">${ICONE_PESSOA}<strong>Arraste sua foto aqui</strong><small>JPG, PNG ou WEBP</small></div>
       <div class="acoes-foto">
         <button class="botao leve pequeno" data-foto="pessoa-camera">📷 Tirar foto</button>
@@ -1178,17 +1240,13 @@
       </div>`;
   }
 
-  /* ---------- Como juntar as fotos (motor) ----------
-     servidor    → IA pelo servidor do ModaClick (FASHN/WeShop) — publicado ou servidor local
-     huggingface → IA gratuita direto do navegador (funciona abrindo o arquivo, sem servidor)
-     comparar    → teste SEM IA: só mostra as duas fotos lado a lado */
+  /* ---------- Motores ---------- */
   function motorAtual() {
     const pv = estado.provador;
-    if (pv.motor === 'servidor' && pv.conexao !== 'ok') return 'huggingface';
+    if (pv.motor === 'servidor' && pv.conexao !== 'ok') return 'gratuita';
     if (pv.motor) return pv.motor;
-    return pv.conexao === 'ok' ? 'servidor' : 'huggingface';
+    return pv.conexao === 'ok' ? 'servidor' : 'gratuita';
   }
-  const ehPecaDeCima = (r) => r.tipo !== 'catalogo' || CATEGORIA_TRYON[r.peca.categoria] === 'tops';
 
   function renderMotores() {
     const pv = estado.provador;
@@ -1200,15 +1258,13 @@
         <strong>${titulo}</strong>${etiqueta}<span>${texto}</span>${extra}
       </label>`;
     $('#motores').innerHTML =
-      card('servidor', '🖥️ IA pelo servidor', `<span class="etiqueta-motor${servidorOk ? '' : ' cinza'}">${servidorOk ? 'FASHN · melhor qualidade' : pv.conexao === 'sem-chave' ? 'paga · não configurada' : 'precisa de servidor'}</span>`,
-        servidorOk ? 'Prova virtual completa (blusas, calças, saias e vestidos).'
-          : pv.conexao === 'sem-chave' ? 'Opção paga: precisa da chave da FASHN (<code>FASHN_API_KEY</code>) na Vercel. Use a IA gratuita ao lado.'
-          : 'Publique o site ou rode o servidor local (<code>node servidor-local.mjs</code>).', '', !servidorOk) +
-      card('huggingface', '🤗 IA gratuita', '<span class="etiqueta-motor">sem servidor</span>',
-        'Funciona abrindo o arquivo no navegador. Troca peças da parte de cima (camisetas, blusas, jaquetas). Pode ter fila.',
-        m === 'huggingface' ? `<span class="campo-token"><small>Token do Hugging Face (opcional, aumenta a cota grátis)</small><input type="password" id="tokenHF" placeholder="hf_..." autocomplete="off" value="${esc(pv.tokenHF)}"></span>` : '') +
+      card('gratuita', '🤗 IA gratuita', '<span class="etiqueta-motor">sem servidor · sem chave</span>',
+        'Funciona no navegador e no site publicado. Parte de cima: IDM-VTON. Parte de baixo e peça única: OOTDiffusion. Pode ter fila.',
+        m === 'gratuita' ? `<span class="campo-token"><small>Token do Hugging Face (opcional, aumenta a cota grátis)</small><input type="password" id="tokenHF" placeholder="hf_..." autocomplete="off" value="${esc(pv.tokenHF)}"></span>` : '') +
+      card('servidor', '🖥️ IA pelo servidor', `<span class="etiqueta-motor${servidorOk ? '' : ' cinza'}">${servidorOk ? 'FASHN · melhor qualidade' : 'paga · não configurada'}</span>`,
+        servidorOk ? 'Prova virtual da FASHN, mais fiel à peça.' : 'Opcional e pago: precisa da chave FASHN_API_KEY no servidor do site.', '', !servidorOk) +
       card('comparar', '👀 Teste sem IA', '<span class="etiqueta-motor cinza">só lado a lado</span>',
-        'Mostra as duas fotos juntas para testar a seleção. <b>Não troca a roupa.</b>');
+        'Mostra as fotos juntas para testar a seleção. <b>Não troca a roupa.</b>');
   }
 
   $('#motores').addEventListener('change', (e) => {
@@ -1222,9 +1278,8 @@
     const c = estado.provador.conexao;
     const caixa = $('#avisoConexao');
     const textos = {
-      'sem-servidor': `<span>💡</span><div><strong>Você está sem servidor, e tudo bem!</strong>Use a <b>IA gratuita</b> (funciona direto no navegador) ou o <b>teste sem IA</b>. Para usar a FASHN sem publicar, rode <code>node servidor-local.mjs</code> e abra <code>http://localhost:3000</code> (veja o LEIA-ME).</div>`,
-      // 'sem-chave': sem aviso no topo; a explicação fica no cartão "IA pelo servidor"
-      'offline': `<span>⚠️</span><div><strong>Não conseguimos falar com o servidor do provador.</strong>Use a IA gratuita ou o teste sem IA, ou rode o servidor local (veja o LEIA-ME).</div>`
+      'sem-servidor': `<span>💡</span><div><strong>Arquivo aberto sem servidor, e tudo bem!</strong>Use a <b>IA gratuita</b>: ela funciona direto no navegador.</div>`,
+      'offline': `<span>💡</span><div><strong>Servidor do site indisponível.</strong>Use a <b>IA gratuita</b>, que funciona direto no navegador.</div>`
     };
     caixa.innerHTML = textos[c] || '';
     caixa.hidden = !textos[c];
@@ -1232,52 +1287,44 @@
 
   function renderProvador() {
     const pv = estado.provador;
-    $('#painelRoupa').innerHTML = painelRoupaHTML();
+    $('#painelRoupa').innerHTML = painelLookHTML();
     $('#painelPessoa').innerHTML = painelPessoaHTML();
+    renderMotores();
+    const motor = motorAtual();
+    const precisaAutorizacao = motor !== 'comparar';
+    $('#caixaConsentimento').hidden = !precisaAutorizacao;
     $('#consentimento').checked = pv.consentimento;
     $('#caixaConsentimento').classList.toggle('marcado', pv.consentimento);
 
-    renderMotores();
-    const motor = motorAtual();
-    const precisaAutorizacao = motor !== 'comparar';                    // o teste sem IA não envia nada
-    $('#caixaConsentimento').hidden = !precisaAutorizacao;
-
-    const roupa = roupaAtual();
-    const temRoupa = !!roupa;
+    const pecas = pecasDoLook();
     const temPessoa = !!pv.pessoa;
-    const pecaNaoSuportada = motor === 'huggingface' && roupa && !ehPecaDeCima(roupa);
-    $('#btnGerar').hidden = !(temRoupa && temPessoa);                 // aparece só com as duas fotos
-    $('#btnGerar').textContent = motor === 'comparar' ? '👀 JUNTAR FOTOS (sem IA)' : '✨ JUNTAR FOTOS';
-    $('#btnGerar').disabled = (precisaAutorizacao && !pv.consentimento) || pv.gerando || pecaNaoSuportada;
-    $('#falta').textContent = !temRoupa && !temPessoa ? 'Escolha a foto da roupa e a foto da pessoa.'
-      : !temRoupa ? 'Agora escolha a foto da roupa (1).'
+    $('#btnGerar').hidden = !(pecas.length && temPessoa);
+    $('#btnGerar').textContent = motor === 'comparar' ? '👀 JUNTAR FOTOS (sem IA)' : `✨ GERAR MEU LOOK${pecas.length > 1 ? ` (${pecas.length} peças)` : ''}`;
+    $('#btnGerar').disabled = (precisaAutorizacao && !pv.consentimento) || pv.gerando;
+    $('#falta').textContent = !pecas.length && !temPessoa ? 'Escolha pelo menos uma peça e a foto da pessoa.'
+      : !pecas.length ? 'Agora escolha pelo menos uma peça (1).'
       : !temPessoa ? 'Agora envie a foto da pessoa (2).'
-      : pecaNaoSuportada ? `A IA gratuita só troca peças da parte de cima. Para "${roupa.nome}", use a IA pelo servidor ou o teste sem IA.`
-      : precisaAutorizacao && !pv.consentimento ? 'Marque a autorização acima para juntar as fotos.'
+      : precisaAutorizacao && !pv.consentimento ? 'Marque a autorização acima para gerar o look.'
       : motor === 'comparar' ? 'Teste sem IA: as fotos aparecem lado a lado, sem troca de roupa.'
+      : pecas.length > 1 ? `Tudo pronto! A IA vai aplicar ${pecas.map(p => p.nome).join(' e depois ')}. ✨`
       : 'Tudo pronto! ✨';
     renderAvisoConexao();
   }
 
-  // Botões das fotos (um ouvinte para tudo)
+  // Botões das fotos
   $('#aba-provador').addEventListener('click', (e) => {
     const b = e.target.closest('[data-foto]');
     if (!b) return;
     const pv = estado.provador;
     const acao = b.dataset.foto;
-    if (acao === 'roupa-camera') $('#inRoupaCamera').click();
-    if (acao === 'roupa-galeria') $('#inRoupaGaleria').click();
+    if (acao === 'camera' || acao === 'galeria') { pv.alvoUpload = b.dataset.espaco; $(acao === 'camera' ? '#inRoupaCamera' : '#inRoupaGaleria').click(); }
+    if (acao === 'remover') { definirPeca(b.dataset.espaco, null); renderProvador(); }
     if (acao === 'pessoa-camera') $('#inPessoaCamera').click();
     if (acao === 'pessoa-galeria') $('#inPessoaGaleria').click();
     if (acao === 'pessoa-remover') { pv.pessoa = null; renderProvador(); }
-    if (acao === 'roupa-remover') {
-      if (pv.fonteRoupa === 'upload') { pv.roupaFoto = null; pv.fonteRoupa = 'catalogo'; }
-      else { estado.pecaSelecionada = null; guardar.salvar('pecaSelecionada', null); atualizarPontinho(); }
-      renderProvador();
-    }
   });
 
-  // Arrastar e soltar nas áreas vazias
+  // Arrastar e soltar
   ['dragover', 'dragleave', 'drop'].forEach(tipo => $('#aba-provador').addEventListener(tipo, (e) => {
     const zona = e.target.closest('[data-soltar]');
     if (!zona) return;
@@ -1296,7 +1343,7 @@
   function mostrarErro(texto) { const e = $('#erroProvador'); e.textContent = '😕 ' + texto; e.hidden = false; }
   function esconderErro() { $('#erroProvador').hidden = true; }
 
-  /* ---------- Conexão com o servidor ---------- */
+  /* ---------- Servidor do site (FASHN, opcional) ---------- */
   function enderecoProvador() {
     const relativo = !/^https?:\/\//i.test(PROVADOR.API);
     const semServidor = location.protocol === 'about:' || location.protocol === 'file:' || location.origin === 'null';
@@ -1320,74 +1367,10 @@
     }
   }
 
-  /* ---------- Gerar o look (chamada REAL à IA) ---------- */
-  $('#btnGerar').addEventListener('click', gerarLook);
-  $('#cancelarGeracao').addEventListener('click', () => { estado.provador.cancelado = true; });
-
-  async function gerarLook() {
-    const pv = estado.provador;
-    const roupa = roupaAtual();
-    if (pv.gerando || !pv.pessoa || !roupa) return;
-    const motor = motorAtual();
-
-    // Teste SEM IA: só mostra as duas fotos lado a lado (nada é enviado)
-    if (motor === 'comparar') {
-      esconderErro();
-      pv.resultado = { tipo: 'comparacao', pessoa: pv.pessoa, roupa, nomeRoupa: roupa.nome };
-      renderResultado();
-      mostrarEtapa('resultado');
-      $('#aba-provador').scrollIntoView({ behavior: 'smooth', block: 'start' });
-      return;
-    }
-    if (!pv.consentimento) return mostrarErro('Marque a autorização para enviarmos suas fotos à IA.');
-    if (motor === 'huggingface' && !ehPecaDeCima(roupa)) return mostrarErro('A IA gratuita só troca peças da parte de cima.');
-
-    pv.gerando = true;
-    pv.cancelado = false;
-    esconderErro();
-    $('#miniCarregando').innerHTML = miniaturasHTML();
-    mostrarEtapa('carregando');
-    $('#aba-provador').scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-    // Mensagens e barra de progresso
-    let i = 0;
-    const msg = $('#msgCarregando');
-    msg.textContent = MENSAGENS_CARREGANDO[0];
-    const trocar = setInterval(() => {
-      msg.classList.add('trocando');
-      setTimeout(() => { i = Math.min(i + 1, MENSAGENS_CARREGANDO.length - 1); msg.textContent = MENSAGENS_CARREGANDO[i]; msg.classList.remove('trocando'); }, 250);
-    }, PROVADOR.INTERVALO_MSG);
-    const inicio = Date.now();
-    const barra = $('#barraProgresso');
-    barra.style.width = '3%';
-    const progresso = setInterval(() => {
-      const s = (Date.now() - inicio) / 1000;
-      barra.style.width = Math.min(95, 3 + (1 - Math.exp(-s * 1000 / PROVADOR.TEMPO_ESPERADO)) * 92) + '%';
-      $('#tempoDecorrido').textContent = `${Math.round(s)} s · costuma levar de 10 a 40 segundos`;
-    }, 300);
-
-    try {
-      const imagem = motor === 'huggingface' ? await processarNoHuggingFace(pv.pessoa, roupa) : await processarNaIA(pv.pessoa, roupa);
-      barra.style.width = '100%';
-      await esperar(300);
-      pv.resultado = { tipo: 'ia', imagem, nomeRoupa: roupa.nome, motor };
-      renderResultado();
-      mostrarEtapa('resultado');
-    } catch (e) {
-      mostrarEtapa('form');
-      if (!e.cancelado) mostrarErro(e.message || 'Não foi possível gerar o look. Tente de novo.');
-    } finally {
-      clearInterval(trocar);
-      clearInterval(progresso);
-      pv.gerando = false;
-      renderProvador();
-    }
-  }
-
-  async function processarNaIA(pessoa, roupa) {
+  async function processarNoServidor(pessoa, roupa, foiCancelado) {
     const url = enderecoProvador();
-    if (!url) throw new Error('O provador precisa do servidor do ModaClick. Publique o site na Vercel com a chave da IA (veja o LEIA-ME).');
-    const cancelar = () => { if (estado.provador.cancelado) { const e = new Error('cancelado'); e.cancelado = true; throw e; } };
+    if (!url) throw new Error('A IA pelo servidor precisa do site publicado. Use a IA gratuita.');
+    const cancelar = () => { if (foiCancelado()) { const e = new Error('cancelado'); e.cancelado = true; throw e; } };
     const pedir = async (...args) => {
       let r;
       try { r = await fetch(...args); }
@@ -1396,22 +1379,18 @@
       if (!r.ok) throw new Error(d.erro || `Erro ${r.status} no servidor do provador.`);
       return d;
     };
-
-    // 1) Envia as fotos (com a autorização) e cria a prova
     const criado = await pedir(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         consentimento: true,
-        pessoa,
+        pessoa: await comoDataUrl(pessoa),
         roupa: roupa.tipo === 'catalogo' ? { url: roupa.imagem } : { imagem: roupa.imagem },
         categoria: roupa.categoria
       })
     });
     if (!criado.id) throw new Error('O servidor não devolveu o número da prova.');
     cancelar();
-
-    // 2) Acompanha até a imagem ficar pronta
     const limite = Date.now() + PROVADOR.TEMPO_LIMITE;
     while (Date.now() < limite) {
       await esperar(PROVADOR.INTERVALO_CONSULTA);
@@ -1423,10 +1402,21 @@
     throw new Error('A IA demorou demais. Tente de novo em alguns minutos.');
   }
 
-  /* ---------- IA GRATUITA direto do navegador (Hugging Face, sem servidor) ----------
-     Usa o espaço público IDM-VTON pela biblioteca oficial do Gradio.
-     Funciona abrindo o index.html no navegador. Não funciona na prévia do Claude,
-     que bloqueia conexões externas. */
+  async function comoBlob(src) {
+    const r = await fetch(src);
+    if (!r.ok) throw new Error('imagem');
+    return r.blob();
+  }
+  async function comoDataUrl(src) {
+    if (String(src).startsWith('data:')) return src;
+    const blob = await comoBlob(src);
+    return new Promise((ok, falha) => { const l = new FileReader(); l.onload = () => ok(l.result); l.onerror = falha; l.readAsDataURL(blob); });
+  }
+
+  /* ---------- IA GRATUITA (Hugging Face, direto do navegador) ----------
+     Parte de cima → IDM-VTON (/tryon) · parte de baixo e peça única → OOTDiffusion (/process_dc).
+     Funciona no site publicado e abrindo o arquivo no navegador.
+     Não funciona na prévia do Claude, que bloqueia conexões externas. */
   function traduzirErroHF(texto) {
     const t = String(texto || '').toLowerCase();
     if (t.includes('quota') || t.includes('gpu')) return 'A cota gratuita de GPU do Hugging Face acabou por agora. Espere alguns minutos ou cole um token gratuito do Hugging Face no campo da opção "IA gratuita".';
@@ -1434,39 +1424,68 @@
     return 'A IA gratuita não conseguiu gerar a imagem agora' + (texto ? ` (${String(texto).slice(0, 120)})` : '') + '. Tente de novo ou use outra foto.';
   }
 
+  function extrairUrl(saida) {
+    if (!saida) return null;
+    if (Array.isArray(saida)) return extrairUrl(saida[0]);                 // galeria: lista de imagens
+    if (typeof saida === 'string') return saida;
+    if (saida.image) return extrairUrl(saida.image);                        // item de galeria { image, caption }
+    return saida.url || null;
+  }
+
+  let gradioCarregado = null;
+  async function carregarGradio() {
+    if (!gradioCarregado) gradioCarregado = import(PROVADOR.URL_GRADIO).catch((e) => { gradioCarregado = null; throw e; });
+    try { return await gradioCarregado; }
+    catch { throw new Error('Não foi possível carregar a biblioteca da IA gratuita. Verifique a internet. Na prévia do Claude isso é bloqueado: abra o site publicado ou o index.html no navegador.'); }
+  }
+
+  // pessoa: dataURL ou URL (resultado de uma etapa anterior) · roupa: { tipo, imagem, nome, categoria }
   async function processarNoHuggingFace(pessoa, roupa, opcoesUso = {}) {
     const foiCancelado = opcoesUso.cancelado || (() => estado.provador.cancelado);
     const mostrarMsg = opcoesUso.mensagem || ((t) => { $('#msgCarregando').textContent = t; });
     const token = opcoesUso.token !== undefined ? opcoesUso.token : estado.provador.tokenHF;
     const cancelar = () => { if (foiCancelado()) { const e = new Error('cancelado'); e.cancelado = true; throw e; } };
-    let gradio;
-    try { gradio = await import(PROVADOR.URL_GRADIO); }
-    catch { throw new Error('Não foi possível carregar a biblioteca da IA gratuita. Verifique a internet. Na prévia do Claude isso é bloqueado, então abra o index.html no navegador (Chrome, Edge…).'); }
-    const { Client, handle_file } = gradio;
+    const { Client, handle_file } = await carregarGradio();
 
-    const pessoaBlob = await (await fetch(pessoa)).blob();
-    const roupaArquivo = roupa.tipo === 'catalogo' ? handle_file(roupa.imagem) : handle_file(await (await fetch(roupa.imagem)).blob());
+    // Foto da pessoa: tenta mandar o arquivo; se não der para baixar, manda o endereço
+    let pessoaArquivo;
+    try { pessoaArquivo = handle_file(await comoBlob(pessoa)); }
+    catch { pessoaArquivo = handle_file(pessoa); }
+    const roupaArquivo = roupa.tipo === 'catalogo' ? handle_file(roupa.imagem) : handle_file(await comoBlob(roupa.imagem));
     cancelar();
 
+    const parteDeCima = roupa.categoria === 'tops';
+    const espaco = parteDeCima ? PROVADOR.ESPACO_CIMA : PROVADOR.ESPACO_CORPO;
     let app;
     try {
       const opcoes = { events: ['data', 'status'] };
       if (token) opcoes.token = token;
-      app = await Client.connect(PROVADOR.ESPACO_HF, opcoes);
-    } catch (e) {
+      app = await Client.connect(espaco, opcoes);
+    } catch {
       throw new Error('Não foi possível conectar ao espaço gratuito de IA (Hugging Face). Ele pode estar fora do ar ou dormindo. Tente de novo em alguns minutos.');
     }
     cancelar();
 
-    const tarefa = app.submit('/tryon', {
-      dict: { background: handle_file(pessoaBlob), layers: [], composite: null }, // a pessoa
-      garm_img: roupaArquivo,                                                     // a roupa
-      garment_des: roupa.nome,
-      is_checked: true,          // máscara automática do corpo
-      is_checked_crop: false,
-      denoise_steps: 30,
-      seed: 42
-    });
+    const tarefa = parteDeCima
+      ? app.submit('/tryon', {
+          dict: { background: pessoaArquivo, layers: [], composite: null },   // a pessoa
+          garm_img: roupaArquivo,                                               // a roupa
+          garment_des: roupa.nome,
+          is_checked: true,          // máscara automática: troca só tronco e braços
+          is_checked_crop: false,
+          denoise_steps: 30,
+          seed: 42
+        })
+      : app.submit('/process_dc', {
+          vton_img: pessoaArquivo,                                              // a pessoa (corpo inteiro)
+          garm_img: roupaArquivo,                                               // a roupa
+          category: roupa.categoria === 'bottoms' ? 'Lower-body' : 'Dress',     // troca só a parte de baixo, ou o vestido
+          n_samples: 1,
+          n_steps: 20,
+          image_scale: 2,
+          seed: -1
+        });
+
     for await (const msg of tarefa) {
       if (foiCancelado()) { try { tarefa.cancel && tarefa.cancel(); } catch {} cancelar(); }
       if (msg.type === 'status') {
@@ -1474,8 +1493,7 @@
         if (typeof msg.position === 'number' && msg.position > 0) mostrarMsg(`Na fila da IA gratuita: posição ${msg.position}${msg.size ? ' de ' + msg.size : ''}…`);
       }
       if (msg.type === 'data') {
-        const saida = Array.isArray(msg.data) ? msg.data[0] : null;
-        const url = saida && (saida.url || (typeof saida === 'string' ? saida : null));
+        const url = extrairUrl(msg.data && msg.data[0]);
         if (url) return url;
         throw new Error('A IA gratuita terminou, mas não devolveu a imagem.');
       }
@@ -1483,59 +1501,182 @@
     throw new Error('A IA gratuita não devolveu a imagem. Tente de novo.');
   }
 
+  /* ---------- Gerar o look (uma peça de cada vez) ---------- */
+  $('#btnGerar').addEventListener('click', gerarLook);
+  $('#cancelarGeracao').addEventListener('click', () => {
+    const pv = estado.provador;
+    pv.tentativa++; pv.gerando = false;      // respostas da tentativa cancelada serão ignoradas
+    mostrarEtapa('form'); renderProvador();
+  });
+
+  function renderEtapasLook(pecas, atual, feitas) {
+    $('#etapasLook').innerHTML = pecas.map((p, i) => `
+      <li class="${i < feitas ? 'feita' : i === atual ? 'agora' : ''}">
+        <span class="bolinha-etapa">${i < feitas ? '✓' : i + 1}</span>
+        <span>${i < feitas ? 'Aplicada' : i === atual ? 'Aplicando' : 'Na sequência'}: <b>${esc(p.nome)}</b></span>
+      </li>`).join('');
+  }
+
+  async function gerarLook() {
+    const pv = estado.provador;
+    const pecas = pecasDoLook();
+    if (pv.gerando || !pv.pessoa || !pecas.length) return;
+    const motor = motorAtual();
+
+    if (motor === 'comparar') {
+      esconderErro();
+      pv.resultado = { tipo: 'comparacao', pessoa: pv.pessoa, pecas };
+      renderResultado();
+      mostrarEtapa('resultado');
+      $('#aba-provador').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    if (!pv.consentimento) return mostrarErro('Marque a autorização para enviarmos suas fotos à IA.');
+
+    const minha = ++pv.tentativa;
+    const foiCancelado = () => minha !== pv.tentativa;
+    pv.gerando = true; pv.cancelado = false;
+    esconderErro();
+    $('#miniCarregando').innerHTML = miniaturasHTML(pecas);
+    renderEtapasLook(pecas, 0, 0);
+    mostrarEtapa('carregando');
+    $('#aba-provador').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    const msg = $('#msgCarregando');
+    const barra = $('#barraProgresso');
+    const inicio = Date.now();
+    let etapa = 0;
+    const frases = ['Enviando as fotos com segurança…', 'Reconhecendo o corpo e a pose…', 'Analisando cores, estampa e detalhes da peça…', 'Vestindo a roupa no corpo…', 'Finalizando a imagem…'];
+    let f = 0;
+    msg.textContent = `Etapa 1 de ${pecas.length}: ${frases[0]}`;
+    const trocar = setInterval(() => {
+      f = Math.min(f + 1, frases.length - 1);
+      if (!/^Na fila/.test(msg.textContent) || f === frases.length - 1) msg.textContent = `Etapa ${etapa + 1} de ${pecas.length}: ${frases[f]}`;
+    }, PROVADOR.INTERVALO_MSG);
+    const progresso = setInterval(() => {
+      const s = (Date.now() - inicio) / 1000;
+      const dentroDaEtapa = 1 - Math.exp(-s / 25);
+      barra.style.width = Math.min(97, ((etapa + dentroDaEtapa) / pecas.length) * 100) + '%';
+      $('#tempoDecorrido').textContent = `${Math.round(s)} s · cada peça leva de 30 segundos a alguns minutos`;
+    }, 300);
+
+    try {
+      let atual = pv.pessoa;
+      for (etapa = 0; etapa < pecas.length; etapa++) {
+        f = 0;
+        renderEtapasLook(pecas, etapa, etapa);
+        msg.textContent = `Etapa ${etapa + 1} de ${pecas.length}: aplicando ${pecas[etapa].nome}…`;
+        atual = motor === 'servidor'
+          ? await processarNoServidor(atual, pecas[etapa], foiCancelado)
+          : await processarNoHuggingFace(atual, pecas[etapa], { cancelado: foiCancelado, mensagem: (t) => { msg.textContent = t; } });
+        if (foiCancelado()) return;
+      }
+      renderEtapasLook(pecas, -1, pecas.length);
+      barra.style.width = '100%';
+      await esperar(300);
+      if (foiCancelado()) return;
+      pv.resultado = { tipo: 'ia', imagem: atual, original: pv.pessoa, pecas, motor };
+      pv.visao = 'deslizar';
+      renderResultado();
+      mostrarEtapa('resultado');
+    } catch (e) {
+      if (foiCancelado() || e.cancelado) return;
+      mostrarEtapa('form');
+      const passo = pecas.length > 1 ? ` (na etapa ${etapa + 1}: ${pecas[etapa] ? pecas[etapa].nome : ''})` : '';
+      mostrarErro((e.message || 'Não foi possível gerar o look.') + passo);
+    } finally {
+      clearInterval(trocar);
+      clearInterval(progresso);
+      if (!foiCancelado()) { pv.gerando = false; renderProvador(); }
+    }
+  }
+
+  function miniaturasHTML(pecas) {
+    const pessoa = estado.provador.pessoa;
+    return pecas.map(p => `<div class="mini-foto">${p.tipo === 'catalogo' ? fotoHTML(p.peca, 200) : `<img src="${p.imagem}" alt="${esc(p.nome)}">`}</div>`).join('<span>＋</span>')
+      + `<span>＋</span><div class="mini-foto">${pessoa ? `<img src="${pessoa}" alt="Sua foto">` : ''}</div>`;
+  }
+
+  /* ---------- Comparador antes/depois (usado no provador e na janela) ---------- */
+  function comparadorHTML(original, final, rotuloFinal, visao, prefixo) {
+    return visao === 'deslizar'
+      ? `<div class="mia-comparar" id="${prefixo}Comparar">
+           <img src="${esc(original)}" alt="Foto original">
+           <img class="mia-depois" src="${esc(final)}" alt="${esc(rotuloFinal)}" id="${prefixo}ImagemFinal">
+           <div class="mia-linha"></div>
+           <span class="mia-rotulo esq">Original</span><span class="mia-rotulo dir">${esc(rotuloFinal)}</span>
+           <input class="mia-range" type="range" min="0" max="100" value="50" aria-label="Deslize para comparar a foto original com a imagem gerada">
+         </div>`
+      : `<div class="mia-lado">
+           <figure><img src="${esc(original)}" alt="Foto original"><figcaption>Original</figcaption></figure>
+           <figure><img src="${esc(final)}" alt="${esc(rotuloFinal)}" id="${prefixo}ImagemFinal"><figcaption>${esc(rotuloFinal)}</figcaption></figure>
+         </div>`;
+  }
+  function ligarComparador(raiz, prefixo) {
+    const range = raiz.querySelector('.mia-range');
+    if (range) range.addEventListener('input', () => document.getElementById(prefixo + 'Comparar').style.setProperty('--pos', range.value + '%'));
+  }
+
   /* ---------- Resultado ---------- */
   function renderResultado() {
-    const r = estado.provador.resultado;
+    const pv = estado.provador;
+    const r = pv.resultado;
     if (!r) return;
     if (r.tipo === 'comparacao') return renderComparacao(r);
-    const nomeMotor = r.motor === 'huggingface' ? 'IA gratuita (Hugging Face · IDM-VTON)' : 'IA de prova virtual pelo servidor';
+    const nomeMotor = r.motor === 'servidor' ? 'a IA da FASHN (servidor)' : 'a IA gratuita do Hugging Face (IDM-VTON / OOTDiffusion)';
     $('#etapaResultado').innerHTML = `
       <div class="resultado">
-        <div class="resultado-foto"><img src="${esc(r.imagem)}" alt="Você vestindo ${esc(r.nomeRoupa)}" id="imagemResultado"></div>
+        <div>
+          <div class="mia-abas" role="tablist">
+            <button data-visao="deslizar" class="${pv.visao === 'deslizar' ? 'ativo' : ''}">↔️ Antes e depois</button>
+            <button data-visao="lado" class="${pv.visao === 'lado' ? 'ativo' : ''}">▣ Lado a lado</button>
+          </div>
+          ${comparadorHTML(r.original, r.imagem, 'Gerada pela IA', pv.visao, 'res')}
+        </div>
         <div class="resultado-info">
           <span class="selo">✨ Gerado por inteligência artificial</span>
           <h2>Seu look ficou pronto!</h2>
-          <p>${esc(r.nomeRoupa)}</p>
-          <div class="miniaturas">${miniaturasHTML()}</div>
+          <p>${r.pecas.map(p => esc(p.nome)).join(' + ')}</p>
+          <div class="miniaturas">${miniaturasHTML(r.pecas)}</div>
           <div class="acoes">
             <button class="botao" id="salvarImagem">⬇️ Salvar imagem</button>
-            <button class="botao leve" id="outraRoupa">👚 Experimentar outra roupa</button>
+            <button class="botao leve" id="outraRoupa">👚 Trocar ou adicionar peças</button>
             <button class="botao leve" id="gerarDeNovo">🔄 Gerar novamente</button>
             <button class="botao leve perigo" id="descartarFotos">🗑️ Descartar minhas fotos</button>
           </div>
-          <p class="nota-ia">Imagem criada por ${nomeMotor} a partir das suas duas fotos. Pode haver pequenas diferenças em relação à peça real, como caimento, textura e tamanho.</p>
+          <p class="nota-ia">Imagem criada por ${nomeMotor}, aplicando ${r.pecas.length > 1 ? 'uma peça de cada vez' : 'a peça'} na sua foto. Pode haver pequenas diferenças em relação à peça real, como caimento, textura e tamanho.</p>
         </div>
       </div>`;
-
+    ligarComparador($('#etapaResultado'), 'res');
+    $('#etapaResultado').querySelectorAll('[data-visao]').forEach(b => b.addEventListener('click', () => { pv.visao = b.dataset.visao; renderResultado(); }));
     ligarBotoesResultado(r);
   }
 
   function renderComparacao(r) {
-    const fotoRoupa = r.roupa.tipo === 'catalogo' ? fotoHTML(r.roupa.peca, 900) : `<img src="${r.roupa.imagem}" alt="Foto da roupa">`;
+    const fotos = r.pecas.map(p => `<figure>${p.tipo === 'catalogo' ? fotoHTML(p.peca, 700) : `<img src="${p.imagem}" alt="${esc(p.nome)}">`}<figcaption>${esc(tituloEspaco(p.espaco))}</figcaption></figure>`).join('');
     $('#etapaResultado').innerHTML = `
       <div class="resultado">
         <div>
           <div class="faixa-teste">⚠️ TESTE SEM IA: a roupa NÃO foi trocada. As fotos só aparecem lado a lado.</div>
-          <div class="comparacao">
-            <figure>${fotoRoupa}<figcaption>1. Roupa</figcaption></figure>
-            <figure><img src="${r.pessoa}" alt="Foto da pessoa"><figcaption>2. Pessoa</figcaption></figure>
+          <div class="comparacao" style="grid-template-columns:repeat(${r.pecas.length + 1}, 1fr)">
+            ${fotos}<figure><img src="${r.pessoa}" alt="Foto da pessoa"><figcaption>Pessoa</figcaption></figure>
           </div>
         </div>
         <div class="resultado-info">
           <span class="selo">👀 Teste de seleção</span>
           <h2>Suas fotos estão prontas</h2>
-          <p>${esc(r.nomeRoupa)}</p>
+          <p>${r.pecas.map(p => esc(p.nome)).join(' + ')}</p>
           <div class="acoes">
-            <button class="botao" id="usarIA">✨ Juntar com IA de verdade</button>
+            <button class="botao" id="usarIA">✨ Gerar com IA de verdade</button>
             <button class="botao leve" id="salvarImagem">⬇️ Salvar comparação</button>
-            <button class="botao leve" id="outraRoupa">👚 Experimentar outra roupa</button>
+            <button class="botao leve" id="outraRoupa">👚 Trocar ou adicionar peças</button>
             <button class="botao leve perigo" id="descartarFotos">🗑️ Descartar minhas fotos</button>
           </div>
-          <p class="nota-ia">Este modo serve para testar o envio e a seleção das fotos sem servidor e sem IA. Para ver a pessoa vestindo a roupa, escolha <b>IA gratuita</b> ou <b>IA pelo servidor</b>.</p>
+          <p class="nota-ia">Este modo serve para testar a seleção das fotos sem IA. Para ver a pessoa vestindo o look, escolha <b>IA gratuita</b>.</p>
         </div>
       </div>`;
     $('#usarIA').addEventListener('click', () => {
-      estado.provador.motor = estado.provador.conexao === 'ok' ? 'servidor' : 'huggingface';
+      estado.provador.motor = estado.provador.conexao === 'ok' ? 'servidor' : 'gratuita';
       mostrarEtapa('form');
       renderProvador();
       $('#motores').scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1544,17 +1685,18 @@
   }
 
   function ligarBotoesResultado(r) {
-    $('#salvarImagem').addEventListener('click', () => r.tipo === 'comparacao' ? salvarComparacao(r) : salvarImagem(r));
+    $('#salvarImagem').addEventListener('click', () => r.tipo === 'comparacao' ? salvarComparacao(r) : salvarImagem(r.imagem));
     $('#outraRoupa').addEventListener('click', () => {
-      estado.provador.resultado = null;                 // a foto da pessoa continua
-      if (estado.provador.fonteRoupa === 'upload') { estado.provador.roupaFoto = null; estado.provador.fonteRoupa = 'catalogo'; }
+      estado.provador.resultado = null;          // a foto da pessoa e as peças continuam
       mostrarEtapa('form');
       navegar('roupas');
     });
     const gerarDeNovo = $('#gerarDeNovo');
     if (gerarDeNovo) gerarDeNovo.addEventListener('click', () => { mostrarEtapa('form'); gerarLook(); });
     $('#descartarFotos').addEventListener('click', () => {
-      Object.assign(estado.provador, { pessoa: null, roupaFoto: null, fonteRoupa: 'catalogo', resultado: null, consentimento: false });
+      Object.assign(estado.provador, { pessoa: null, resultado: null, consentimento: false });
+      for (const k of Object.keys(estado.look)) if (estado.look[k] && estado.look[k].tipo === 'upload') estado.look[k] = null;
+      salvarLook(); atualizarPontinho();
       $('#etapaResultado').innerHTML = '';
       mostrarEtapa('form');
       renderProvador();
@@ -1562,20 +1704,13 @@
     });
   }
 
-  async function salvarImagem(r) {
+  async function salvarImagem(src, nome = 'modaclick-meu-look.jpg') {
     try {
-      let href = r.imagem, temporario = false;
-      if (!href.startsWith('data:')) {                  // se a IA devolver um link em vez da imagem
-        const blob = await (await fetch(href)).blob();
-        href = URL.createObjectURL(blob); temporario = true;
-      }
-      const tipo = (/^data:image\/(\w+)/.exec(r.imagem) || [])[1] || 'jpg';
+      let href = src, temporario = false;
+      if (!String(src).startsWith('data:')) { href = URL.createObjectURL(await comoBlob(src)); temporario = true; }
       const link = document.createElement('a');
-      link.href = href;
-      link.download = `modaclick-meu-look.${tipo === 'jpeg' ? 'jpg' : tipo}`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+      link.href = href; link.download = nome;
+      document.body.appendChild(link); link.click(); link.remove();
       if (temporario) setTimeout(() => URL.revokeObjectURL(href), 4000);
       avisar('Imagem salva! 💾');
     } catch {
@@ -1583,7 +1718,7 @@
     }
   }
 
-  // Junta as duas fotos numa imagem só (com o aviso "teste sem IA") para salvar
+  // Junta as fotos (peças + pessoa) numa imagem só, com o aviso "teste sem IA"
   async function salvarComparacao(r) {
     const carregar = (src) => new Promise((ok, falha) => {
       const img = new Image();
@@ -1591,16 +1726,16 @@
       img.onload = () => ok(img); img.onerror = falha; img.src = src;
     });
     try {
-      const [roupa, pessoa] = await Promise.all([carregar(r.roupa.imagem), carregar(r.pessoa)]);
-      const A = 1000, L = 750, faixa = 70, margem = 20;
+      const imgs = await Promise.all([...r.pecas.map(p => carregar(p.imagem)), carregar(r.pessoa)]);
+      const A = 900, L = 675, faixa = 70, margem = 20;
       const c = document.createElement('canvas');
-      c.width = L * 2 + margem * 3; c.height = A + faixa + margem * 2;
+      c.width = imgs.length * L + (imgs.length + 1) * margem; c.height = A + faixa + margem * 2;
       const ctx = c.getContext('2d');
       ctx.fillStyle = '#fff7fa'; ctx.fillRect(0, 0, c.width, c.height);
       ctx.fillStyle = '#e8518a'; ctx.fillRect(0, 0, c.width, faixa);
       ctx.fillStyle = '#fff'; ctx.font = '600 28px Poppins, Arial, sans-serif'; ctx.textAlign = 'center';
       ctx.fillText('ModaClick · TESTE SEM IA (a roupa não foi trocada)', c.width / 2, 46);
-      [roupa, pessoa].forEach((img, i) => {
+      imgs.forEach((img, i) => {
         const x0 = margem + i * (L + margem), y0 = faixa + margem;
         ctx.fillStyle = '#fff'; ctx.fillRect(x0, y0, L, A);
         const k = Math.min(L / img.width, A / img.height);
@@ -1613,90 +1748,26 @@
       document.body.appendChild(link); link.click(); link.remove();
       avisar('Comparação salva! 💾');
     } catch {
-      avisar('Não deu para salvar a comparação aqui (a foto do catálogo pode estar bloqueada). Tente com uma foto sua de roupa.');
+      avisar('Não deu para salvar a comparação aqui (alguma foto do catálogo pode estar bloqueada).');
     }
   }
 
-  /* ============== JANELA "EXPERIMENTAR COM IA" (WeShop AI via Cloudflare Worker) ==============
-     • WORKER_URL vazio  → MODO DEMONSTRAÇÃO: nada é enviado e o resultado é uma
-       ilustração marcada como "IMAGEM DEMONSTRATIVA" (não é IA).
-     • WORKER_URL preenchido → envia as fotos ao Worker (worker/src/index.js), que guarda
-       a chave WESHOP_API_KEY e chama a API oficial da WeShop (virtualtryon v1.0).
-     A chave da WeShop NUNCA fica neste arquivo. */
-  const PROVADOR_IA = {
-    WORKER_URL: '',              // ex.: 'https://modaclick-provador.SEU-USUARIO.workers.dev'
-    INTERVALO_CONSULTA: 3000,
-    TEMPO_LIMITE: 180000,
-    LADO_MAXIMO: 1536,
-    LADO_MINIMO: 513,            // a WeShop exige largura e altura acima de 512 px
-    PROPORCAO_MAX: 2             // e proporção menor que 2:1
-  };
-  // Qual motor a janela usa:
-  //   'weshop'   → WORKER_URL preenchido (WeShop AI paga, via Cloudflare Worker)
-  //   'gratuita' → sem Worker + peça de cima: IA gratuita do Hugging Face (IDM-VTON), direto do navegador
-  //   'demo'     → sem Worker + calça, saia ou vestido: só a ilustração demonstrativa
-  function modoMia() {
-    if (PROVADOR_IA.WORKER_URL) return 'weshop';
-    return mia.peca && CATEGORIA_TRYON[mia.peca.categoria] === 'tops' ? 'gratuita' : 'demo';
-  }
-  const modoDemo = () => modoMia() === 'demo';
-  const mia = { peca: null, pessoa: null, consentimento: false, etapa: 'enviar', gerando: false, cancelado: false, resultado: null, visao: 'deslizar', focoAnterior: null, tentativa: 0 };
-  const ETAPAS_WESHOP = { pending: 'Na fila da WeShop AI…', segmenting: 'Analisando a roupa…', running: 'Gerando seu look…' };
+  /* ============== JANELA "EXPERIMENTAR COM IA" (prova rápida de UMA peça) ==============
+     Usa a mesma IA gratuita do provador (IDM-VTON para parte de cima,
+     OOTDiffusion para parte de baixo e peça única). Para combinar várias peças,
+     o botão "Montar look completo" leva ao Provador Virtual. */
+  const mia = { peca: null, pessoa: null, consentimento: false, etapa: 'enviar', gerando: false, tentativa: 0, resultado: null, visao: 'deslizar', focoAnterior: null };
 
-  function lerFotoCorpo(arquivo) {
-    return new Promise((resolve, reject) => {
-      if (!arquivo || !arquivo.type.startsWith('image/')) return reject(new Error('Esse arquivo não é uma imagem. Use uma foto JPG, PNG ou WEBP.'));
-      if (arquivo.size > 15 * 1024 * 1024) return reject(new Error('A foto é muito grande (máximo 15 MB).'));
-      const leitor = new FileReader();
-      leitor.onerror = () => reject(new Error('Não foi possível ler a foto.'));
-      leitor.onload = () => {
-        const img = new Image();
-        img.onerror = () => reject(new Error('Não conseguimos abrir essa foto (HEIC do iPhone pode não funcionar). Tente JPG ou PNG.'));
-        img.onload = () => {
-          const menor = Math.min(img.width, img.height), maior = Math.max(img.width, img.height);
-          if (menor < PROVADOR_IA.LADO_MINIMO) return reject(new Error(`A foto precisa ter mais de 512 px de largura e de altura (a sua tem ${img.width}×${img.height}).`));
-          if (maior / menor >= PROVADOR_IA.PROPORCAO_MAX) return reject(new Error('A foto está comprida demais. Use uma foto com proporção menor que 2:1 (por exemplo, 3:4).'));
-          const k = Math.min(1, PROVADOR_IA.LADO_MAXIMO / maior);
-          const c = document.createElement('canvas');
-          c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
-          const ctx = c.getContext('2d');
-          ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
-          ctx.drawImage(img, 0, 0, c.width, c.height);
-          resolve(c.toDataURL('image/jpeg', 0.9));
-        };
-        img.src = leitor.result;
-      };
-      leitor.readAsDataURL(arquivo);
-    });
+  function roupaDaJanela() {
+    const p = mia.peca;
+    return { tipo: 'catalogo', peca: p, imagem: urlFoto(p, 1200), nome: p.nome, categoria: CATEGORIA_TRYON[p.categoria], espaco: ESPACO_DA_CATEGORIA[CATEGORIA_TRYON[p.categoria]] };
   }
 
-  // Ilustração DEMONSTRATIVA (não é IA): manequim com a cor e o tipo da peça
-  function imagemDemonstrativa(p) {
-    const corBase = CORES_HEX[p.cores[0]] || '#e8518a';
-    const cor = corBase.startsWith('#') && corBase.toLowerCase() !== '#ffffff' ? corBase : (corBase.toLowerCase() === '#ffffff' ? '#f4f4f4' : '#e8518a');
-    const tipo = CATEGORIA_TRYON[p.categoria];
-    const corpo = '<g fill="#f3dfe6"><circle cx="300" cy="150" r="58"/><rect x="282" y="200" width="36" height="40" rx="12"/><path d="M215 250q85-30 170 0l20 250h-40l-10 250h-45l-10-200-10 200h-45l-10-250h-40Z"/><path d="M215 255 165 470h30l45-180M385 255l50 215h-30l-45-180"/></g>';
-    const pecas = {
-      tops: `<path d="M220 245q80-35 160 0l55 110-45 25-20-45v170H230V335l-20 45-45-25Z" fill="${cor}" stroke="#c93a72" stroke-width="3"/>`,
-      bottoms: `<path d="M228 470h144l18 290h-62l-28-210-28 210h-62Z" fill="${cor}" stroke="#c93a72" stroke-width="3"/>`,
-      'one-pieces': `<path d="M228 245q72-30 144 0l8 120 70 360H150l70-360Z" fill="${cor}" stroke="#c93a72" stroke-width="3"/>`
-    };
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800">
-      <defs><linearGradient id="f" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff7fa"/><stop offset="1" stop-color="#fde4ee"/></linearGradient>
-      <pattern id="m" width="300" height="160" patternUnits="userSpaceOnUse" patternTransform="rotate(-28)"><text x="0" y="80" font-family="Arial,sans-serif" font-size="30" font-weight="700" fill="#e8518a" fill-opacity=".13">DEMONSTRAÇÃO</text></pattern></defs>
-      <rect width="600" height="800" fill="url(#f)"/>${corpo}${pecas[tipo] || pecas.tops}
-      <rect width="600" height="800" fill="url(#m)"/>
-      <rect x="0" y="730" width="600" height="70" fill="#e8518a"/>
-      <text x="300" y="762" text-anchor="middle" font-family="Arial,sans-serif" font-size="22" font-weight="700" fill="#fff">IMAGEM DEMONSTRATIVA</text>
-      <text x="300" y="788" text-anchor="middle" font-family="Arial,sans-serif" font-size="15" fill="#fff">Ilustração · não foi gerada por IA</text></svg>`;
-    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
-  }
-
-  /* ---------- Abrir / fechar ---------- */
   function abrirModalIA(id) {
     const p = acharPeca(id);
     if (!podeProvar(p)) { avisar('Acessórios ainda não podem ser provados com IA.'); return; }
-    mia.peca = p; mia.etapa = 'enviar'; mia.resultado = null; mia.cancelado = false;
+    mia.peca = p; mia.etapa = 'enviar'; mia.resultado = null;
+    if (!mia.pessoa && estado.provador.pessoa) mia.pessoa = estado.provador.pessoa;   // reaproveita a foto do provador
     mia.focoAnterior = document.activeElement;
     $('#modalIA').hidden = false;
     document.body.classList.add('travado');
@@ -1704,20 +1775,18 @@
     setTimeout(() => $('#modalIA .mia-fechar').focus(), 50);
   }
   function fecharModalIA() {
-    if (mia.gerando) { mia.cancelado = true; mia.tentativa++; mia.gerando = false; mia.etapa = 'enviar'; }
+    if (mia.gerando) { mia.tentativa++; mia.gerando = false; mia.etapa = 'enviar'; }
     $('#modalIA').hidden = true;
     document.body.classList.remove('travado');
     if (mia.focoAnterior && mia.focoAnterior.focus) mia.focoAnterior.focus();
   }
 
-  /* ---------- Desenho da janela ---------- */
   function renderModalIA() {
     const p = mia.peca;
     if (!p) return;
     $('#miaSubtitulo').textContent = p.nome;
-    const modo = modoMia();
-    $('#miaModo').className = 'mia-modo ' + (modo === 'demo' ? 'demo' : 'real');
-    $('#miaModo').textContent = { demo: '🧪 MODO DEMONSTRAÇÃO', gratuita: '🤗 IA gratuita', weshop: '✨ WeShop AI' }[modo];
+    $('#miaModo').className = 'mia-modo real';
+    $('#miaModo').textContent = '🤗 IA gratuita';
     const corpo = $('#miaCorpo');
     if (mia.etapa === 'gerando') return renderMiaGerando(corpo);
     if (mia.etapa === 'resultado') return renderMiaResultado(corpo);
@@ -1727,11 +1796,11 @@
          <div class="mia-acoes"><button class="botao leve pequeno" data-mia="camera">📷 Nova foto</button><button class="botao leve pequeno" data-mia="galeria">🖼️ Trocar</button><button class="botao leve pequeno perigo" data-mia="remover">Remover</button></div>`
       : `<div class="mia-foto soltar" data-mia-soltar>${ICONE_PESSOA}<strong>Arraste sua foto aqui</strong><small>Corpo inteiro, de frente, com boa luz</small></div>
          <div class="mia-acoes"><button class="botao leve pequeno" data-mia="camera">📷 Tirar foto</button><button class="botao leve pequeno" data-mia="galeria">🖼️ Galeria</button></div>`;
-    const prontos = !!mia.pessoa && (modoDemo() || mia.consentimento);
+    const prontos = !!mia.pessoa && mia.consentimento;
+    const qual = CATEGORIA_TRYON[p.categoria] === 'tops' ? 'só no tronco e nos braços (IDM-VTON)' : CATEGORIA_TRYON[p.categoria] === 'bottoms' ? 'só na parte de baixo (OOTDiffusion)' : 'no lugar da roupa do corpo (OOTDiffusion)';
     corpo.innerHTML = `
-      ${modo === 'demo' ? `<div class="mia-banner">🧪 <b>Modo demonstração.</b> A IA gratuita só troca <b>peças de cima</b> (camisetas, blusas, jaquetas). Para "${esc(p.nome)}", esta janela mostra uma <b>imagem demonstrativa</b>, não uma prova real. Nada é enviado.</div>` : ''}
-      ${modo === 'gratuita' ? `<div class="mia-banner" style="background:#fffafc;border-color:#f59ac0;color:#7a2e50">🤗 <b>IA gratuita (Hugging Face · IDM-VTON).</b> Aplica a roupa só no tronco e nos braços e mantém o resto da sua foto. Pode ter fila.
-        <span class="campo-token" style="margin-top:8px"><small>Token do Hugging Face (opcional, aumenta a cota grátis)</small><input type="password" id="miaToken" placeholder="hf_..." autocomplete="off" value="${esc(estado.provador.tokenHF)}"></span></div>` : ''}
+      <div class="mia-banner" style="background:#fffafc;border-color:#f59ac0;color:#7a2e50">🤗 <b>IA gratuita (Hugging Face).</b> Aplica a peça ${qual} e mantém o resto da sua foto. Pode ter fila.
+        <span class="campo-token" style="margin-top:8px"><small>Token do Hugging Face (opcional, aumenta a cota grátis)</small><input type="password" id="miaToken" placeholder="hf_..." autocomplete="off" value="${esc(estado.provador.tokenHF)}"></span></div>
       <div class="mia-grid">
         <div class="mia-bloco">
           <h3><span class="mia-passo">1</span> Roupa selecionada</h3>
@@ -1741,14 +1810,15 @@
         <div class="mia-bloco">
           <h3><span class="mia-passo">2</span> Sua foto de corpo</h3>
           ${fotoPessoa}
-          <span class="mia-dica">Mais de 512 px, proporção menor que 2:1, só uma pessoa na foto.</span>
+          <span class="mia-dica">${CATEGORIA_TRYON[p.categoria] === 'tops' ? 'De frente, da cintura para cima ou corpo inteiro.' : 'De corpo inteiro, de frente, em pé.'} Só uma pessoa na foto.</span>
         </div>
       </div>
-      ${modo === 'demo' ? '' : `<label class="consentimento${mia.consentimento ? ' marcado' : ''}"><input type="checkbox" data-mia="consentimento"${mia.consentimento ? ' checked' : ''}><span><strong>Autorizo o envio da minha foto ${modo === 'weshop' ? 'à WeShop AI' : 'à IA gratuita do Hugging Face'}</strong> somente para gerar este look. O ModaClick não guarda a foto. ${modo === 'weshop' ? 'A WeShop armazena as imagens enviadas no serviço dela para processar o pedido.' : 'O espaço público guarda a foto temporariamente para processar o pedido.'}</span></label>`}
+      <label class="consentimento${mia.consentimento ? ' marcado' : ''}"><input type="checkbox" data-mia="consentimento"${mia.consentimento ? ' checked' : ''}><span><strong>Autorizo o envio da minha foto à IA gratuita do Hugging Face</strong> somente para gerar este look. O ModaClick não guarda a foto. O espaço público guarda a foto temporariamente para processar o pedido.</span></label>
       <div class="mia-rodape">
         <div class="erro-provador" id="miaErro" role="alert" hidden></div>
         <button class="botao grande" data-mia="gerar"${prontos ? '' : ' disabled'}>✨ Gerar meu look</button>
-        <span class="falta">${!mia.pessoa ? 'Envie sua foto de corpo (2).' : !prontos ? 'Marque a autorização para gerar.' : modo === 'demo' ? 'Pronto: vamos mostrar uma demonstração.' : 'Tudo pronto! ✨'}</span>
+        <span class="falta">${!mia.pessoa ? 'Envie sua foto de corpo (2).' : !prontos ? 'Marque a autorização para gerar.' : 'Tudo pronto! ✨'}</span>
+        <button class="botao leve pequeno" data-mia="look">➕ Montar look completo com esta peça</button>
       </div>`;
   }
 
@@ -1756,28 +1826,15 @@
     corpo.innerHTML = `
       <div class="mia-gerando" aria-live="polite">
         <div class="loader"><div class="anel"></div><div class="anel dois"></div><div class="centro">${ICONE_ROUPA.replace('viewBox', 'width="38" height="38" viewBox')}</div></div>
-        <h3>${{ demo: 'Preparando a demonstração', gratuita: 'A IA gratuita está criando seu look', weshop: 'A WeShop AI está criando seu look' }[modoMia()]}</h3>
-        <p class="msg-carregando" id="miaMsg">${modoDemo() ? 'Montando a imagem demonstrativa…' : 'Enviando suas fotos com segurança…'}</p>
-        <span class="tempo" id="miaTempo">${modoDemo() ? '' : modoMia() === 'gratuita' ? 'Pode levar de 30 segundos a alguns minutos (fila).' : 'Costuma levar de 15 a 60 segundos.'}</span>
+        <h3>A IA gratuita está criando seu look</h3>
+        <p class="msg-carregando" id="miaMsg">Enviando sua foto com segurança…</p>
+        <span class="tempo" id="miaTempo">Pode levar de 30 segundos a alguns minutos (fila).</span>
         <button class="botao leve pequeno" data-mia="cancelar">Cancelar</button>
       </div>`;
   }
 
   function renderMiaResultado(corpo) {
     const r = mia.resultado;
-    const rotuloDepois = r.demo ? 'Demonstração' : 'Gerada pela IA';
-    const comparar = mia.visao === 'deslizar'
-      ? `<div class="mia-comparar" id="miaComparar">
-           <img src="${mia.pessoa}" alt="Sua foto original">
-           <img class="mia-depois" src="${esc(r.imagem)}" alt="${r.demo ? 'Imagem demonstrativa' : 'Imagem gerada pela IA'}" id="miaImagemFinal">
-           <div class="mia-linha"></div>
-           <span class="mia-rotulo esq">Original</span><span class="mia-rotulo dir">${rotuloDepois}</span>
-           <input class="mia-range" type="range" min="0" max="100" value="50" aria-label="Deslize para comparar a foto original com a imagem ${r.demo ? 'demonstrativa' : 'gerada'}">
-         </div>`
-      : `<div class="mia-lado">
-           <figure><img src="${mia.pessoa}" alt="Sua foto original"><figcaption>Original</figcaption></figure>
-           <figure><img src="${esc(r.imagem)}" alt="${rotuloDepois}" id="miaImagemFinal"><figcaption>${rotuloDepois}</figcaption></figure>
-         </div>`;
     corpo.innerHTML = `
       <div class="mia-resultado">
         <div>
@@ -1785,27 +1842,23 @@
             <button data-mia="ver-deslizar" class="${mia.visao === 'deslizar' ? 'ativo' : ''}">↔️ Deslizar</button>
             <button data-mia="ver-lado" class="${mia.visao === 'lado' ? 'ativo' : ''}">▣ Lado a lado</button>
           </div>
-          ${comparar}
+          ${comparadorHTML(mia.pessoa, r.imagem, 'Gerada pela IA', mia.visao, 'mia')}
         </div>
         <div class="mia-info">
-          <span class="selo">${r.demo ? '🧪 Imagem demonstrativa' : r.motor === 'gratuita' ? '🤗 Gerado pela IA gratuita' : '✨ Gerado pela WeShop AI'}</span>
-          <h3>${r.demo ? 'Assim o resultado vai aparecer' : 'Seu look ficou pronto!'}</h3>
+          <span class="selo">🤗 Gerado pela IA gratuita</span>
+          <h3>Seu look ficou pronto!</h3>
           <p>${esc(mia.peca.nome)}</p>
           <div class="acoes">
             <button class="botao" data-mia="salvar">⬇️ Salvar imagem</button>
+            <button class="botao leve" data-mia="look">➕ Montar look completo</button>
             <button class="botao leve" data-mia="gerar">🔄 Gerar novamente</button>
             <button class="botao leve" data-mia="nova-foto">🧍‍♀️ Usar outra foto</button>
             <button class="botao leve" data-mia="fechar">Fechar</button>
           </div>
-          <p class="mia-nota${r.demo ? ' demo' : ''}">${r.demo
-            ? 'Modo demonstração: a imagem da direita é uma <b>ilustração</b> feita pelo site para mostrar o layout. <b>Não foi gerada por IA</b> e não usa a sua foto. A IA gratuita funciona com peças de cima. Para calças, saias e vestidos, conecte a WeShop (veja o LEIA-ME).'
-            : r.motor === 'gratuita'
-              ? 'Imagem criada pela IA gratuita do Hugging Face (IDM-VTON) a partir da sua foto: ela troca só a parte de cima. Pode haver pequenas diferenças no caimento, na textura e nos detalhes da peça.'
-              : 'Imagem criada pela WeShop AI (virtualtryon). A modelo gerada <b>se parece</b> com a pessoa da foto, mas pode haver diferenças no rosto, no corpo e no caimento da roupa.'}</p>
+          <p class="mia-nota">Imagem criada pela IA gratuita do Hugging Face a partir da sua foto. Pode haver pequenas diferenças no caimento, na textura e nos detalhes da peça.</p>
         </div>
       </div>`;
-    const range = corpo.querySelector('.mia-range');
-    if (range) range.addEventListener('input', () => $('#miaComparar').style.setProperty('--pos', range.value + '%'));
+    ligarComparador(corpo, 'mia');
   }
 
   function erroMia(texto) {
@@ -1815,111 +1868,37 @@
     if (e) { e.textContent = '😕 ' + texto; e.hidden = false; }
   }
 
-  /* ---------- Gerar ---------- */
   async function gerarMia() {
     if (mia.gerando || !mia.pessoa) return;
-    if (!modoDemo() && !mia.consentimento) return erroMia('Marque a autorização para enviarmos sua foto à IA.');
-    const minha = ++mia.tentativa;            // cada geração tem um número; respostas antigas são ignoradas
-    mia.gerando = true; mia.cancelado = false; mia.etapa = 'gerando';
+    if (!mia.consentimento) return erroMia('Marque a autorização para enviarmos sua foto à IA.');
+    const minha = ++mia.tentativa;
+    mia.gerando = true; mia.etapa = 'gerando';
     renderModalIA();
     const inicio = Date.now();
     const relogio = setInterval(() => {
       const t = $('#miaTempo');
-      if (t && !modoDemo()) t.textContent = `${Math.round((Date.now() - inicio) / 1000)} s · ${modoMia() === 'gratuita' ? 'pode levar alguns minutos se houver fila' : 'costuma levar de 15 a 60 segundos'}`;
+      if (t) t.textContent = `${Math.round((Date.now() - inicio) / 1000)} s · pode levar alguns minutos se houver fila`;
     }, 500);
     try {
-      const modo = modoMia();
-      const imagem = modo === 'demo' ? await demonstracaoMia(minha) : modo === 'gratuita' ? await processarGratuitaMia(minha) : await processarWeShop(minha);
+      const imagem = await processarNoHuggingFace(mia.pessoa, roupaDaJanela(), {
+        cancelado: () => minha !== mia.tentativa,
+        mensagem: (t) => { const m = $('#miaMsg'); if (m) m.textContent = t; },
+        token: estado.provador.tokenHF
+      });
       if (minha !== mia.tentativa) return;
-      mia.resultado = { demo: modo === 'demo', motor: modo, imagem };
+      mia.resultado = { imagem };
       mia.etapa = 'resultado'; mia.visao = 'deslizar';
       renderModalIA();
     } catch (e) {
-      if (minha === mia.tentativa && !mia.cancelado) erroMia(e.message || 'Não foi possível gerar o look.');
+      if (minha === mia.tentativa && !e.cancelado) erroMia(e.message || 'Não foi possível gerar o look.');
     } finally {
       clearInterval(relogio);
       if (minha === mia.tentativa) mia.gerando = false;
     }
   }
 
-  // IA gratuita (Hugging Face) — mesma função usada na aba Provador Virtual
-  function processarGratuitaMia(minha) {
-    const p = mia.peca;
-    return processarNoHuggingFace(mia.pessoa, { tipo: 'catalogo', peca: p, imagem: urlFoto(p, 1200), nome: p.nome }, {
-      cancelado: () => minha !== mia.tentativa,
-      mensagem: (t) => { const m = $('#miaMsg'); if (m) m.textContent = t; },
-      token: estado.provador.tokenHF
-    });
-  }
-
-  async function demonstracaoMia(minha) {
-    await esperar(1500);
-    if (minha !== mia.tentativa) throw new Error('cancelado');
-    return imagemDemonstrativa(mia.peca);
-  }
-
-  async function processarWeShop(minha) {
-    const base = PROVADOR_IA.WORKER_URL.replace(/\/+$/, '');
-    const pedir = async (url, opcoes) => {
-      let r;
-      try { r = await fetch(url, opcoes); }
-      catch { throw new Error('Não conseguimos falar com o servidor do provador (Worker). Confira o WORKER_URL e se o endereço deste site está em ALLOWED_ORIGINS. Na prévia do Claude, conexões externas costumam ser bloqueadas.'); }
-      const d = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(d.erro || (r.status === 403 ? 'O Worker recusou este site (origem não permitida em ALLOWED_ORIGINS).' : `Erro ${r.status} no servidor do provador.`));
-      return d;
-    };
-    const parar = () => { if (minha !== mia.tentativa) throw new Error('cancelado'); };
-
-    const criado = await pedir(`${base}/tryon`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ consentimento: true, pessoa: mia.pessoa, roupa: { url: urlFoto(mia.peca, 1200) } })
-    });
-    if (!criado.id) throw new Error('O servidor não devolveu o número da prova.');
-    parar();
-    const msg = () => $('#miaMsg');
-    if (msg()) msg().textContent = 'Tarefa criada na WeShop AI…';
-
-    const limite = Date.now() + PROVADOR_IA.TEMPO_LIMITE;
-    while (Date.now() < limite) {
-      await esperar(PROVADOR_IA.INTERVALO_CONSULTA);
-      parar();
-      const s = await pedir(`${base}/tryon/${encodeURIComponent(criado.id)}`);
-      if (msg() && s.etapa) msg().textContent = ETAPAS_WESHOP[String(s.etapa).toLowerCase()] || 'Gerando seu look…';
-      if (s.status === 'pronto' && s.imagens && s.imagens[0]) return s.imagens[0];
-      if (s.status === 'erro') throw new Error(s.erro || 'A WeShop não conseguiu gerar a imagem.');
-    }
-    throw new Error('A WeShop demorou demais. Tente de novo em alguns minutos.');
-  }
-
-  async function salvarMia() {
-    const r = mia.resultado;
-    try {
-      let href, nome;
-      if (r.demo) { href = r.imagem; nome = 'modaclick-imagem-demonstrativa.svg'; }
-      else if (r.motor === 'gratuita') {
-        const resp = await fetch(r.imagem);
-        if (!resp.ok) throw new Error();
-        href = URL.createObjectURL(await resp.blob()); nome = 'modaclick-meu-look.jpg';
-      } else {
-        const base = PROVADOR_IA.WORKER_URL.replace(/\/+$/, '');
-        const resp = await fetch(`${base}/imagem?u=${encodeURIComponent(r.imagem)}`);
-        if (!resp.ok) throw new Error();
-        href = URL.createObjectURL(await resp.blob()); nome = 'modaclick-meu-look.jpg';
-      }
-      const a = document.createElement('a');
-      a.href = href; a.download = nome;
-      document.body.appendChild(a); a.click(); a.remove();
-      if (href.startsWith('blob:')) setTimeout(() => URL.revokeObjectURL(href), 4000);
-      avisar(r.demo ? 'Imagem demonstrativa salva.' : 'Imagem salva! 💾');
-    } catch {
-      avisar('Não deu para salvar direto: clique com o botão direito na imagem (ou segure no celular) e escolha salvar.');
-    }
-  }
-
-  /* ---------- Eventos da janela ---------- */
   async function receberFotoMia(arquivo) {
-    try { mia.pessoa = await lerFotoCorpo(arquivo); mia.etapa = 'enviar'; renderModalIA(); }
+    try { mia.pessoa = await lerImagem(arquivo); mia.etapa = 'enviar'; renderModalIA(); }
     catch (e) { erroMia(e.message); }
   }
   ['#miaCamera', '#miaGaleria'].forEach(sel => $(sel).addEventListener('change', (e) => {
@@ -1937,10 +1916,17 @@
     if (acao === 'galeria') $('#miaGaleria').click();
     if (acao === 'remover') { mia.pessoa = null; renderModalIA(); }
     if (acao === 'gerar') gerarMia();
-    if (acao === 'cancelar') { mia.cancelado = true; mia.tentativa++; mia.gerando = false; mia.etapa = 'enviar'; renderModalIA(); }
-    if (acao === 'salvar') salvarMia();
+    if (acao === 'cancelar') { mia.tentativa++; mia.gerando = false; mia.etapa = 'enviar'; renderModalIA(); }
+    if (acao === 'salvar') salvarImagem(mia.resultado.imagem);
     if (acao === 'nova-foto') { mia.pessoa = null; mia.etapa = 'enviar'; renderModalIA(); $('#miaGaleria').click(); }
     if (acao === 'ver-deslizar' || acao === 'ver-lado') { mia.visao = acao === 'ver-lado' ? 'lado' : 'deslizar'; renderModalIA(); }
+    if (acao === 'look') {
+      if (mia.pessoa && !estado.provador.pessoa) estado.provador.pessoa = mia.pessoa;          // leva a foto junto
+      if (mia.consentimento) estado.provador.consentimento = true;
+      const id = mia.peca.id;
+      fecharModalIA();
+      selecionarParaProvador(id);
+    }
   });
   $('#modalIA').addEventListener('input', (e) => {
     if (e.target.id === 'miaToken') estado.provador.tokenHF = e.target.value.trim();

@@ -2,7 +2,8 @@
 //  Servidor local do ModaClick — testar SEM publicar o site
 //
 //  Roda o site e os backends (api/chat.js e api/provador.js) no seu
-//  computador, para usar a IA da FASHN (ou WeShop) e a Moda Click IA.
+//  computador, para usar a IA da FASHN (paga, opcional) e a Moda Click IA.
+//  A IA gratuita do provador NÃO precisa deste servidor.
 //
 //  Como usar (precisa do Node 18 ou mais novo: https://nodejs.org):
 //    1. Copie .env.example para .env e cole sua chave em FASHN_API_KEY
@@ -72,7 +73,7 @@ http.createServer((req, res) => {
     res.end(dados);
   }).catch(() => { res.statusCode = 404; res.end('Não encontrado'); });
 }).listen(PORTA, () => {
-  const provador = process.env.FASHN_API_KEY ? 'FASHN ✅' : process.env.WESHOP_API_KEY ? 'WeShop ✅' : 'sem chave ⚠️ (use a IA gratuita ou coloque FASHN_API_KEY no .env)';
+  const provador = process.env.FASHN_API_KEY ? 'FASHN ✅' : 'sem chave (use a IA gratuita, ou coloque FASHN_API_KEY no .env)';
   console.log(`\n🌸 ModaClick rodando em http://localhost:${PORTA}`);
   console.log(`   Provador com IA pelo servidor: ${provador}`);
   console.log(`   Moda Click IA (chat): ${process.env.GEMINI_API_KEY ? 'Gemini ✅' : 'sem chave ⚠️ (GEMINI_API_KEY no .env)'}`);

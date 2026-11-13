@@ -2,18 +2,15 @@
 //  Provador Virtual com IA — backend (função serverless da Vercel)
 //  Endereço: /api/provador
 //
-//  Faz a prova virtual DE VERDADE com uma API especializada:
-//    • FASHN (recomendada)  → https://docs.fashn.ai   (modelo tryon-v1.6)
-//    • WeShop AI            → https://open.weshop.ai  (agente virtualtryon)
+//  Opcional e PAGO: faz a prova virtual com a API da FASHN
+//    https://docs.fashn.ai (modelo tryon-v1.6).
+//  O site funciona sem isto, usando a IA gratuita do Hugging Face no navegador.
 //
 //  As chaves ficam SOMENTE aqui, como variáveis de ambiente da Vercel
 //  (Settings → Environment Variables):
-//      FASHN_API_KEY      -> chave da FASHN (usa a FASHN)
-//      WESHOP_API_KEY     -> chave da WeShop (usada se não houver FASHN)
-//  Opcionais:
-//      PROVADOR_PROVEDOR  -> força "fashn" ou "weshop"
+//      FASHN_API_KEY      -> chave da FASHN
+//  Opcional:
 //      FASHN_MODE         -> performance | balanced (padrão) | quality
-//      WESHOP_VERSION     -> weshopFlash | weshopPro (padrão) | bananaPro
 //      ALLOWED_ORIGINS    -> outros sites que podem chamar esta API ("null" para srcdoc)
 //
 //  Privacidade: este arquivo NÃO salva fotos em lugar nenhum e não as registra
@@ -36,12 +33,7 @@ class ErroAmigavel extends Error {
 }
 
 function provedorAtivo() {
-  const escolhido = (process.env.PROVADOR_PROVEDOR || '').toLowerCase();
-  if (escolhido === 'fashn' && process.env.FASHN_API_KEY) return 'fashn';
-  if (escolhido === 'weshop' && process.env.WESHOP_API_KEY) return 'weshop';
-  if (process.env.FASHN_API_KEY) return 'fashn';
-  if (process.env.WESHOP_API_KEY) return 'weshop';
-  return null;
+  return process.env.FASHN_API_KEY ? 'fashn' : null;
 }
 
 function origemPermitida(req) {
@@ -70,15 +62,6 @@ function validarUrl(u) {
   } catch {
     throw new ErroAmigavel('Endereço da foto da roupa inválido.', 400);
   }
-}
-
-// Baixa uma imagem (resultado da WeShop) e devolve como dataURL, para o site poder salvar
-async function paraDataUrl(url) {
-  const r = await fetch(url);
-  if (!r.ok) throw new ErroAmigavel('Não foi possível buscar a imagem gerada.');
-  const tipo = (r.headers.get('content-type') || 'image/jpeg').split(';')[0];
-  const buf = Buffer.from(await r.arrayBuffer());
-  return `data:${tipo};base64,${buf.toString('base64')}`;
 }
 
 /* ============================ FASHN ============================ */
@@ -152,75 +135,7 @@ const fashn = {
   }
 };
 
-/* ============================ WESHOP ============================ */
-const WESHOP = 'https://openapi.weshop.ai';
-
-async function weshopFetch(caminho, opcoes = {}) {
-  const resp = await fetch(WESHOP + caminho, {
-    ...opcoes,
-    headers: { Authorization: process.env.WESHOP_API_KEY, ...(opcoes.headers || {}) } // chave pura, sem "Bearer"
-  });
-  const dados = await resp.json().catch(() => ({}));
-  if (!resp.ok || dados.success === false) {
-    console.error('WeShop', caminho, resp.status);
-    if (resp.status === 401 || resp.status === 403) throw new ErroAmigavel('A chave da WeShop é inválida.', 500);
-    if (resp.status === 402) throw new ErroAmigavel('A conta da WeShop está sem créditos.', 402);
-    if (resp.status === 429) throw new ErroAmigavel('Muitas provas ao mesmo tempo. Espere um pouco e tente de novo.', 429);
-    throw new ErroAmigavel('O serviço de prova virtual não respondeu como esperado.');
-  }
-  return dados;
-}
-
-async function weshopEnviar(dataUrl, nome) {
-  const { tipo, bytes } = validarDataUrl(dataUrl);
-  const form = new FormData();
-  form.append('image', new Blob([bytes], { type: tipo }), `${nome}.${tipo.split('/')[1]}`);
-  const dados = await weshopFetch('/openapi/agent/assets/images', { method: 'POST', body: form });
-  if (!dados?.data?.image) throw new ErroAmigavel('A WeShop não devolveu o endereço da foto.');
-  return dados.data.image;
-}
-
-const weshop = {
-  async criar({ pessoa, roupa }) {
-    const urlPessoa = await weshopEnviar(pessoa, 'pessoa');
-    const urlRoupa = roupa.startsWith('data:') ? await weshopEnviar(roupa, 'roupa') : roupa;
-    const versao = process.env.WESHOP_VERSION || 'weshopPro';
-    const params = {
-      generateVersion: versao,
-      descriptionType: 'custom',
-      textDescription: 'The person in Figure 2 wearing the garment from Figure 1. Keep the face, hair, body proportions, pose and background of Figure 2 unchanged.',
-      batchCount: 1
-    };
-    if (versao !== 'weshopFlash') params.aspectRatio = '3:4';
-    if (versao === 'bananaPro') params.imageSize = '1K';
-    const dados = await weshopFetch('/openapi/agent/runs', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        agent: { name: 'virtualtryon', version: 'v1.0' },
-        input: { taskName: 'modaclick', originalImage: urlRoupa, fashionModelImage: urlPessoa },
-        params
-      })
-    });
-    if (!dados?.meta?.executionId) throw new ErroAmigavel('A WeShop não devolveu o número da prova.');
-    return dados.meta.executionId;
-  },
-
-  async consultar(id) {
-    const dados = await weshopFetch(`/openapi/agent/runs/${encodeURIComponent(id)}`);
-    const execs = dados?.data?.executions || [];
-    const e = execs.find(x => String(x.executionId) === id) || execs[0] || {};
-    if (e.status === 'Success') {
-      const url = (e.result || []).find(r => r && r.image && r.status !== 'Failed')?.image;
-      if (!url) return { status: 'erro', erro: 'A IA não conseguiu gerar a imagem. Tente outra foto.' };
-      return { status: 'pronto', imagem: await paraDataUrl(url) };
-    }
-    if (e.status === 'Failed') return { status: 'erro', erro: 'A IA não conseguiu gerar a imagem. Tente outra foto.' };
-    return { status: 'processando' };
-  }
-};
-
-const PROVEDORES = { fashn, weshop };
+const PROVEDORES = { fashn };
 
 /* ============================ HANDLER ============================ */
 module.exports = async function handler(req, res) {
@@ -243,13 +158,13 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ pronto: !!nomeProvedor, provedor: nomeProvedor });
     }
     if (!nomeProvedor) {
-      return res.status(503).json({ erro: 'O provador ainda não foi configurado: falta a chave FASHN_API_KEY (ou WESHOP_API_KEY) na Vercel.' });
+      return res.status(503).json({ erro: 'A IA pelo servidor não foi configurada: falta a chave FASHN_API_KEY na Vercel. Use a IA gratuita.' });
     }
 
     // ---------- Consultar ----------
     if (req.method === 'GET') {
       const id = String(params.get('id') || '');
-      const m = /^(fashn|weshop):([A-Za-z0-9_-]{1,128})$/.exec(id);
+      const m = /^(fashn):([A-Za-z0-9_-]{1,128})$/.exec(id);
       if (!m || !PROVEDORES[m[1]]) return res.status(400).json({ erro: 'Número da prova inválido.' });
       const resultado = await PROVEDORES[m[1]].consultar(m[2]);
       return res.status(200).json(resultado);
