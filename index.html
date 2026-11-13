@@ -1048,6 +1048,8 @@
   const PROVADOR = {
     API: '/api/provador',            // servidor do site (Vercel). Em arquivo local use o endereço completo.
     URL_GRADIO: 'https://cdn.jsdelivr.net/npm/@gradio/client@2.1.0/dist/index.min.js',
+    // Versão anterior da biblioteca, usada se a nova não conseguir conectar a espaços mais antigos
+    URL_GRADIO_ANTIGO: 'https://cdn.jsdelivr.net/npm/@gradio/client@1.8.0/dist/index.min.js',
     ESPACO_CIMA: 'yisol/IDM-VTON',           // IA gratuita para a parte de cima
     ESPACO_CORPO: 'levihsu/OOTDiffusion',    // IA gratuita para parte de baixo e peça única
     INTERVALO_CONSULTA: 2500,
@@ -1091,7 +1093,7 @@
 
   estado.provador = {
     pessoa: null, consentimento: false, gerando: false, cancelado: false, tentativa: 0,
-    resultado: null, conexao: null, motor: null, tokenHF: '', alvoUpload: null, visao: 'deslizar'
+    resultado: null, conexao: null, motor: null, tokenHF: guardar.ler('tokenHF') || '', alvoUpload: null, visao: 'deslizar'
   };
 
   const esperar = (ms) => new Promise(r => setTimeout(r, ms));
@@ -1260,7 +1262,7 @@
     $('#motores').innerHTML =
       card('gratuita', '🤗 IA gratuita', '<span class="etiqueta-motor">sem servidor · sem chave</span>',
         'Funciona no navegador e no site publicado. Parte de cima: IDM-VTON. Parte de baixo e peça única: OOTDiffusion. Pode ter fila.',
-        m === 'gratuita' ? `<span class="campo-token"><small>Token do Hugging Face (opcional, aumenta a cota grátis)</small><input type="password" id="tokenHF" placeholder="hf_..." autocomplete="off" value="${esc(pv.tokenHF)}"></span>` : '') +
+        m === 'gratuita' ? `<span class="campo-token"><small>Token do Hugging Face (opcional, aumenta a cota grátis) · fica salvo só neste navegador</small><input type="password" id="tokenHF" placeholder="hf_..." autocomplete="off" value="${esc(pv.tokenHF)}">${pv.tokenHF ? '<a href="#" data-esquecer-token style="font-size:.75rem;color:var(--rosa-escuro);text-decoration:underline">Esquecer token</a>' : ''}</span>` : '') +
       card('servidor', '🖥️ IA pelo servidor', `<span class="etiqueta-motor${servidorOk ? '' : ' cinza'}">${servidorOk ? 'FASHN · melhor qualidade' : 'paga · não configurada'}</span>`,
         servidorOk ? 'Prova virtual da FASHN, mais fiel à peça.' : 'Opcional e pago: precisa da chave FASHN_API_KEY no servidor do site.', '', !servidorOk) +
       card('comparar', '👀 Teste sem IA', '<span class="etiqueta-motor cinza">só lado a lado</span>',
@@ -1270,8 +1272,16 @@
   $('#motores').addEventListener('change', (e) => {
     if (e.target.name === 'motor') { estado.provador.motor = e.target.value; esconderErro(); renderProvador(); }
   });
+  // Token do Hugging Face: fica salvo SÓ neste navegador (nunca no código do site)
+  function salvarTokenHF(valor) {
+    estado.provador.tokenHF = String(valor || '').trim();
+    guardar.salvar('tokenHF', estado.provador.tokenHF || null);
+  }
   $('#motores').addEventListener('input', (e) => {
-    if (e.target.id === 'tokenHF') estado.provador.tokenHF = e.target.value.trim();
+    if (e.target.id === 'tokenHF') salvarTokenHF(e.target.value);
+  });
+  $('#motores').addEventListener('click', (e) => {
+    if (e.target.closest('[data-esquecer-token]')) { e.preventDefault(); salvarTokenHF(''); renderProvador(); avisar('Token apagado deste navegador.'); }
   });
 
   function renderAvisoConexao() {
@@ -1432,11 +1442,36 @@
     return saida.url || null;
   }
 
-  let gradioCarregado = null;
-  async function carregarGradio() {
-    if (!gradioCarregado) gradioCarregado = import(PROVADOR.URL_GRADIO).catch((e) => { gradioCarregado = null; throw e; });
-    try { return await gradioCarregado; }
-    catch { throw new Error('Não foi possível carregar a biblioteca da IA gratuita. Verifique a internet. Na prévia do Claude isso é bloqueado: abra o site publicado ou o index.html no navegador.'); }
+  const bibliotecas = {};
+  function carregarGradio(url) {
+    if (!bibliotecas[url]) bibliotecas[url] = import(url).catch((e) => { delete bibliotecas[url]; throw e; });
+    return bibliotecas[url];
+  }
+
+  // Conecta ao espaço tentando: biblioteca nova (com token → sem token) e, se falhar,
+  // a biblioteca anterior (com token → sem token). Mostra o motivo real se nada der certo.
+  async function conectarEspaco(espaco, token) {
+    const motivos = [];
+    let algumaCarregou = false;
+    for (const url of [PROVADOR.URL_GRADIO, PROVADOR.URL_GRADIO_ANTIGO]) {
+      const versao = (url.match(/client@([\d.]+)/) || [])[1] || '?';
+      let lib;
+      try { lib = await carregarGradio(url); algumaCarregou = true; }
+      catch { motivos.push(`biblioteca ${versao} não carregou`); continue; }
+      for (const t of token ? [token, null] : [null]) {
+        try {
+          const opcoes = { events: ['data', 'status'] };
+          if (t) { opcoes.token = t; opcoes.hf_token = t; }        // "token" na versão 2, "hf_token" na versão 1
+          const app = await lib.Client.connect(espaco, opcoes);
+          if (token && !t) avisar('O token do Hugging Face foi recusado (pode estar errado ou ter sido apagado). Gerando sem token.');
+          return { app, handle_file: lib.handle_file };
+        } catch (e) {
+          motivos.push(`v${versao} ${t ? 'com token' : 'sem token'}: ${String((e && e.message) || e).slice(0, 90)}`);
+        }
+      }
+    }
+    if (!algumaCarregou) throw new Error('Não foi possível carregar a biblioteca da IA gratuita. Verifique a internet. Na prévia do Claude isso é bloqueado: abra o site publicado ou o index.html no navegador.');
+    throw new Error(`Não foi possível conectar ao espaço gratuito de IA (${espaco}). Ele pode estar fora do ar, dormindo ou com fila cheia. Tente de novo em alguns minutos. Detalhe técnico: ${motivos.join(' | ')}`);
   }
 
   // pessoa: dataURL ou URL (resultado de uma etapa anterior) · roupa: { tipo, imagem, nome, categoria }
@@ -1445,7 +1480,10 @@
     const mostrarMsg = opcoesUso.mensagem || ((t) => { $('#msgCarregando').textContent = t; });
     const token = opcoesUso.token !== undefined ? opcoesUso.token : estado.provador.tokenHF;
     const cancelar = () => { if (foiCancelado()) { const e = new Error('cancelado'); e.cancelado = true; throw e; } };
-    const { Client, handle_file } = await carregarGradio();
+    const parteDeCima = roupa.categoria === 'tops';
+    const espaco = parteDeCima ? PROVADOR.ESPACO_CIMA : PROVADOR.ESPACO_CORPO;
+    const { app, handle_file } = await conectarEspaco(espaco, token);
+    cancelar();
 
     // A biblioteca do Hugging Face, no navegador, aceita só um endereço http(s) ou um File
     // (um Blob "solto" é recusado com "Invalid input…"). Por isso as fotos viram File.
@@ -1461,18 +1499,6 @@
     };
     const pessoaArquivo = await comoArquivo(pessoa, 'pessoa.jpg');
     const roupaArquivo = roupa.tipo === 'catalogo' ? handle_file(roupa.imagem) : await comoArquivo(roupa.imagem, 'roupa.jpg');
-    cancelar();
-
-    const parteDeCima = roupa.categoria === 'tops';
-    const espaco = parteDeCima ? PROVADOR.ESPACO_CIMA : PROVADOR.ESPACO_CORPO;
-    let app;
-    try {
-      const opcoes = { events: ['data', 'status'] };
-      if (token) opcoes.token = token;
-      app = await Client.connect(espaco, opcoes);
-    } catch {
-      throw new Error('Não foi possível conectar ao espaço gratuito de IA (Hugging Face). Ele pode estar fora do ar ou dormindo. Tente de novo em alguns minutos.');
-    }
     cancelar();
 
     const tarefa = parteDeCima
@@ -1809,7 +1835,7 @@
     const qual = CATEGORIA_TRYON[p.categoria] === 'tops' ? 'só no tronco e nos braços (IDM-VTON)' : CATEGORIA_TRYON[p.categoria] === 'bottoms' ? 'só na parte de baixo (OOTDiffusion)' : 'no lugar da roupa do corpo (OOTDiffusion)';
     corpo.innerHTML = `
       <div class="mia-banner" style="background:#fffafc;border-color:#f59ac0;color:#7a2e50">🤗 <b>IA gratuita (Hugging Face).</b> Aplica a peça ${qual} e mantém o resto da sua foto. Pode ter fila.
-        <span class="campo-token" style="margin-top:8px"><small>Token do Hugging Face (opcional, aumenta a cota grátis)</small><input type="password" id="miaToken" placeholder="hf_..." autocomplete="off" value="${esc(estado.provador.tokenHF)}"></span></div>
+        <span class="campo-token" style="margin-top:8px"><small>Token do Hugging Face (opcional, aumenta a cota grátis) · fica salvo só neste navegador</small><input type="password" id="miaToken" placeholder="hf_..." autocomplete="off" value="${esc(estado.provador.tokenHF)}"></span></div>
       <div class="mia-grid">
         <div class="mia-bloco">
           <h3><span class="mia-passo">1</span> Roupa selecionada</h3>
@@ -1938,7 +1964,7 @@
     }
   });
   $('#modalIA').addEventListener('input', (e) => {
-    if (e.target.id === 'miaToken') estado.provador.tokenHF = e.target.value.trim();
+    if (e.target.id === 'miaToken') salvarTokenHF(e.target.value);
   });
   $('#modalIA').addEventListener('change', (e) => {
     if (e.target.dataset.mia === 'consentimento') { mia.consentimento = e.target.checked; renderModalIA(); }
