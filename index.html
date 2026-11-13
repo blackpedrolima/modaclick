@@ -1447,11 +1447,20 @@
     const cancelar = () => { if (foiCancelado()) { const e = new Error('cancelado'); e.cancelado = true; throw e; } };
     const { Client, handle_file } = await carregarGradio();
 
-    // Foto da pessoa: tenta mandar o arquivo; se não der para baixar, manda o endereço
-    let pessoaArquivo;
-    try { pessoaArquivo = handle_file(await comoBlob(pessoa)); }
-    catch { pessoaArquivo = handle_file(pessoa); }
-    const roupaArquivo = roupa.tipo === 'catalogo' ? handle_file(roupa.imagem) : handle_file(await comoBlob(roupa.imagem));
+    // A biblioteca do Hugging Face, no navegador, aceita só um endereço http(s) ou um File
+    // (um Blob "solto" é recusado com "Invalid input…"). Por isso as fotos viram File.
+    const comoArquivo = async (src, nome) => {
+      if (/^https?:\/\//i.test(src)) {
+        try { const b = await comoBlob(src); return handle_file(new File([b], nome, { type: b.type || 'image/jpeg' })); }
+        catch { return handle_file(src); }                 // não deu para baixar: manda o endereço
+      }
+      let b;
+      try { b = await comoBlob(src); }
+      catch { throw new Error('Não foi possível preparar a foto. Escolha a foto de novo e tente outra vez.'); }
+      return handle_file(new File([b], nome, { type: b.type || 'image/jpeg' }));
+    };
+    const pessoaArquivo = await comoArquivo(pessoa, 'pessoa.jpg');
+    const roupaArquivo = roupa.tipo === 'catalogo' ? handle_file(roupa.imagem) : await comoArquivo(roupa.imagem, 'roupa.jpg');
     cancelar();
 
     const parteDeCima = roupa.categoria === 'tops';
