@@ -1,5 +1,0 @@
-# Arquivos que NUNCA devem ir para o GitHub
-.env
-.env.local
-node_modules/
-.vercel/
