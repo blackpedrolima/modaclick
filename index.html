@@ -1434,8 +1434,11 @@
     return 'A IA gratuita não conseguiu gerar a imagem agora' + (texto ? ` (${String(texto).slice(0, 120)})` : '') + '. Tente de novo ou use outra foto.';
   }
 
-  async function processarNoHuggingFace(pessoa, roupa) {
-    const cancelar = () => { if (estado.provador.cancelado) { const e = new Error('cancelado'); e.cancelado = true; throw e; } };
+  async function processarNoHuggingFace(pessoa, roupa, opcoesUso = {}) {
+    const foiCancelado = opcoesUso.cancelado || (() => estado.provador.cancelado);
+    const mostrarMsg = opcoesUso.mensagem || ((t) => { $('#msgCarregando').textContent = t; });
+    const token = opcoesUso.token !== undefined ? opcoesUso.token : estado.provador.tokenHF;
+    const cancelar = () => { if (foiCancelado()) { const e = new Error('cancelado'); e.cancelado = true; throw e; } };
     let gradio;
     try { gradio = await import(PROVADOR.URL_GRADIO); }
     catch { throw new Error('Não foi possível carregar a biblioteca da IA gratuita. Verifique a internet. Na prévia do Claude isso é bloqueado, então abra o index.html no navegador (Chrome, Edge…).'); }
@@ -1448,7 +1451,7 @@
     let app;
     try {
       const opcoes = { events: ['data', 'status'] };
-      if (estado.provador.tokenHF) opcoes.token = estado.provador.tokenHF;
+      if (token) opcoes.token = token;
       app = await Client.connect(PROVADOR.ESPACO_HF, opcoes);
     } catch (e) {
       throw new Error('Não foi possível conectar ao espaço gratuito de IA (Hugging Face). Ele pode estar fora do ar ou dormindo. Tente de novo em alguns minutos.');
@@ -1465,10 +1468,10 @@
       seed: 42
     });
     for await (const msg of tarefa) {
-      if (estado.provador.cancelado) { try { tarefa.cancel && tarefa.cancel(); } catch {} cancelar(); }
+      if (foiCancelado()) { try { tarefa.cancel && tarefa.cancel(); } catch {} cancelar(); }
       if (msg.type === 'status') {
         if (msg.stage === 'error') throw new Error(traduzirErroHF(msg.message));
-        if (typeof msg.position === 'number' && msg.position > 0) $('#msgCarregando').textContent = `Na fila da IA gratuita: posição ${msg.position}${msg.size ? ' de ' + msg.size : ''}…`;
+        if (typeof msg.position === 'number' && msg.position > 0) mostrarMsg(`Na fila da IA gratuita: posição ${msg.position}${msg.size ? ' de ' + msg.size : ''}…`);
       }
       if (msg.type === 'data') {
         const saida = Array.isArray(msg.data) ? msg.data[0] : null;
@@ -1628,7 +1631,15 @@
     LADO_MINIMO: 513,            // a WeShop exige largura e altura acima de 512 px
     PROPORCAO_MAX: 2             // e proporção menor que 2:1
   };
-  const modoDemo = () => !PROVADOR_IA.WORKER_URL;
+  // Qual motor a janela usa:
+  //   'weshop'   → WORKER_URL preenchido (WeShop AI paga, via Cloudflare Worker)
+  //   'gratuita' → sem Worker + peça de cima: IA gratuita do Hugging Face (IDM-VTON), direto do navegador
+  //   'demo'     → sem Worker + calça, saia ou vestido: só a ilustração demonstrativa
+  function modoMia() {
+    if (PROVADOR_IA.WORKER_URL) return 'weshop';
+    return mia.peca && CATEGORIA_TRYON[mia.peca.categoria] === 'tops' ? 'gratuita' : 'demo';
+  }
+  const modoDemo = () => modoMia() === 'demo';
   const mia = { peca: null, pessoa: null, consentimento: false, etapa: 'enviar', gerando: false, cancelado: false, resultado: null, visao: 'deslizar', focoAnterior: null, tentativa: 0 };
   const ETAPAS_WESHOP = { pending: 'Na fila da WeShop AI…', segmenting: 'Analisando a roupa…', running: 'Gerando seu look…' };
 
@@ -1704,8 +1715,9 @@
     const p = mia.peca;
     if (!p) return;
     $('#miaSubtitulo').textContent = p.nome;
-    $('#miaModo').className = 'mia-modo ' + (modoDemo() ? 'demo' : 'real');
-    $('#miaModo').textContent = modoDemo() ? '🧪 MODO DEMONSTRAÇÃO' : '✨ WeShop AI';
+    const modo = modoMia();
+    $('#miaModo').className = 'mia-modo ' + (modo === 'demo' ? 'demo' : 'real');
+    $('#miaModo').textContent = { demo: '🧪 MODO DEMONSTRAÇÃO', gratuita: '🤗 IA gratuita', weshop: '✨ WeShop AI' }[modo];
     const corpo = $('#miaCorpo');
     if (mia.etapa === 'gerando') return renderMiaGerando(corpo);
     if (mia.etapa === 'resultado') return renderMiaResultado(corpo);
@@ -1717,7 +1729,9 @@
          <div class="mia-acoes"><button class="botao leve pequeno" data-mia="camera">📷 Tirar foto</button><button class="botao leve pequeno" data-mia="galeria">🖼️ Galeria</button></div>`;
     const prontos = !!mia.pessoa && (modoDemo() || mia.consentimento);
     corpo.innerHTML = `
-      ${modoDemo() ? '<div class="mia-banner">🧪 <b>Modo demonstração.</b> A IA ainda não está conectada: nada é enviado e o resultado será uma <b>imagem demonstrativa</b>, não uma prova real.</div>' : ''}
+      ${modo === 'demo' ? `<div class="mia-banner">🧪 <b>Modo demonstração.</b> A IA gratuita só troca <b>peças de cima</b> (camisetas, blusas, jaquetas). Para "${esc(p.nome)}", esta janela mostra uma <b>imagem demonstrativa</b>, não uma prova real. Nada é enviado.</div>` : ''}
+      ${modo === 'gratuita' ? `<div class="mia-banner" style="background:#fffafc;border-color:#f59ac0;color:#7a2e50">🤗 <b>IA gratuita (Hugging Face · IDM-VTON).</b> Aplica a roupa só no tronco e nos braços e mantém o resto da sua foto. Pode ter fila.
+        <span class="campo-token" style="margin-top:8px"><small>Token do Hugging Face (opcional, aumenta a cota grátis)</small><input type="password" id="miaToken" placeholder="hf_..." autocomplete="off" value="${esc(estado.provador.tokenHF)}"></span></div>` : ''}
       <div class="mia-grid">
         <div class="mia-bloco">
           <h3><span class="mia-passo">1</span> Roupa selecionada</h3>
@@ -1730,11 +1744,11 @@
           <span class="mia-dica">Mais de 512 px, proporção menor que 2:1, só uma pessoa na foto.</span>
         </div>
       </div>
-      ${modoDemo() ? '' : `<label class="consentimento${mia.consentimento ? ' marcado' : ''}"><input type="checkbox" data-mia="consentimento"${mia.consentimento ? ' checked' : ''}><span><strong>Autorizo o envio da minha foto à WeShop AI</strong> somente para gerar este look. O ModaClick não guarda a foto. A WeShop armazena as imagens enviadas no serviço dela para processar o pedido.</span></label>`}
+      ${modo === 'demo' ? '' : `<label class="consentimento${mia.consentimento ? ' marcado' : ''}"><input type="checkbox" data-mia="consentimento"${mia.consentimento ? ' checked' : ''}><span><strong>Autorizo o envio da minha foto ${modo === 'weshop' ? 'à WeShop AI' : 'à IA gratuita do Hugging Face'}</strong> somente para gerar este look. O ModaClick não guarda a foto. ${modo === 'weshop' ? 'A WeShop armazena as imagens enviadas no serviço dela para processar o pedido.' : 'O espaço público guarda a foto temporariamente para processar o pedido.'}</span></label>`}
       <div class="mia-rodape">
         <div class="erro-provador" id="miaErro" role="alert" hidden></div>
         <button class="botao grande" data-mia="gerar"${prontos ? '' : ' disabled'}>✨ Gerar meu look</button>
-        <span class="falta">${!mia.pessoa ? 'Envie sua foto de corpo (2).' : !prontos ? 'Marque a autorização para gerar.' : modoDemo() ? 'Pronto: vamos mostrar uma demonstração.' : 'Tudo pronto! ✨'}</span>
+        <span class="falta">${!mia.pessoa ? 'Envie sua foto de corpo (2).' : !prontos ? 'Marque a autorização para gerar.' : modo === 'demo' ? 'Pronto: vamos mostrar uma demonstração.' : 'Tudo pronto! ✨'}</span>
       </div>`;
   }
 
@@ -1742,9 +1756,9 @@
     corpo.innerHTML = `
       <div class="mia-gerando" aria-live="polite">
         <div class="loader"><div class="anel"></div><div class="anel dois"></div><div class="centro">${ICONE_ROUPA.replace('viewBox', 'width="38" height="38" viewBox')}</div></div>
-        <h3>${modoDemo() ? 'Preparando a demonstração' : 'A WeShop AI está criando seu look'}</h3>
+        <h3>${{ demo: 'Preparando a demonstração', gratuita: 'A IA gratuita está criando seu look', weshop: 'A WeShop AI está criando seu look' }[modoMia()]}</h3>
         <p class="msg-carregando" id="miaMsg">${modoDemo() ? 'Montando a imagem demonstrativa…' : 'Enviando suas fotos com segurança…'}</p>
-        <span class="tempo" id="miaTempo">${modoDemo() ? '' : 'Costuma levar de 15 a 60 segundos.'}</span>
+        <span class="tempo" id="miaTempo">${modoDemo() ? '' : modoMia() === 'gratuita' ? 'Pode levar de 30 segundos a alguns minutos (fila).' : 'Costuma levar de 15 a 60 segundos.'}</span>
         <button class="botao leve pequeno" data-mia="cancelar">Cancelar</button>
       </div>`;
   }
@@ -1774,7 +1788,7 @@
           ${comparar}
         </div>
         <div class="mia-info">
-          <span class="selo">${r.demo ? '🧪 Imagem demonstrativa' : '✨ Gerado pela WeShop AI'}</span>
+          <span class="selo">${r.demo ? '🧪 Imagem demonstrativa' : r.motor === 'gratuita' ? '🤗 Gerado pela IA gratuita' : '✨ Gerado pela WeShop AI'}</span>
           <h3>${r.demo ? 'Assim o resultado vai aparecer' : 'Seu look ficou pronto!'}</h3>
           <p>${esc(mia.peca.nome)}</p>
           <div class="acoes">
@@ -1784,8 +1798,10 @@
             <button class="botao leve" data-mia="fechar">Fechar</button>
           </div>
           <p class="mia-nota${r.demo ? ' demo' : ''}">${r.demo
-            ? 'Modo demonstração: a imagem da direita é uma <b>ilustração</b> feita pelo site para mostrar o layout. <b>Não foi gerada por IA</b> e não usa a sua foto. Para a prova real, conecte o Worker da WeShop (veja o LEIA-ME).'
-            : 'Imagem criada pela WeShop AI (virtualtryon). A modelo gerada <b>se parece</b> com a pessoa da foto, mas pode haver diferenças no rosto, no corpo e no caimento da roupa.'}</p>
+            ? 'Modo demonstração: a imagem da direita é uma <b>ilustração</b> feita pelo site para mostrar o layout. <b>Não foi gerada por IA</b> e não usa a sua foto. A IA gratuita funciona com peças de cima. Para calças, saias e vestidos, conecte a WeShop (veja o LEIA-ME).'
+            : r.motor === 'gratuita'
+              ? 'Imagem criada pela IA gratuita do Hugging Face (IDM-VTON) a partir da sua foto: ela troca só a parte de cima. Pode haver pequenas diferenças no caimento, na textura e nos detalhes da peça.'
+              : 'Imagem criada pela WeShop AI (virtualtryon). A modelo gerada <b>se parece</b> com a pessoa da foto, mas pode haver diferenças no rosto, no corpo e no caimento da roupa.'}</p>
         </div>
       </div>`;
     const range = corpo.querySelector('.mia-range');
@@ -1802,19 +1818,20 @@
   /* ---------- Gerar ---------- */
   async function gerarMia() {
     if (mia.gerando || !mia.pessoa) return;
-    if (!modoDemo() && !mia.consentimento) return erroMia('Marque a autorização para enviarmos sua foto à WeShop AI.');
+    if (!modoDemo() && !mia.consentimento) return erroMia('Marque a autorização para enviarmos sua foto à IA.');
     const minha = ++mia.tentativa;            // cada geração tem um número; respostas antigas são ignoradas
     mia.gerando = true; mia.cancelado = false; mia.etapa = 'gerando';
     renderModalIA();
     const inicio = Date.now();
     const relogio = setInterval(() => {
       const t = $('#miaTempo');
-      if (t && !modoDemo()) t.textContent = `${Math.round((Date.now() - inicio) / 1000)} s · costuma levar de 15 a 60 segundos`;
+      if (t && !modoDemo()) t.textContent = `${Math.round((Date.now() - inicio) / 1000)} s · ${modoMia() === 'gratuita' ? 'pode levar alguns minutos se houver fila' : 'costuma levar de 15 a 60 segundos'}`;
     }, 500);
     try {
-      const imagem = modoDemo() ? await demonstracaoMia(minha) : await processarWeShop(minha);
+      const modo = modoMia();
+      const imagem = modo === 'demo' ? await demonstracaoMia(minha) : modo === 'gratuita' ? await processarGratuitaMia(minha) : await processarWeShop(minha);
       if (minha !== mia.tentativa) return;
-      mia.resultado = { demo: modoDemo(), imagem };
+      mia.resultado = { demo: modo === 'demo', motor: modo, imagem };
       mia.etapa = 'resultado'; mia.visao = 'deslizar';
       renderModalIA();
     } catch (e) {
@@ -1823,6 +1840,16 @@
       clearInterval(relogio);
       if (minha === mia.tentativa) mia.gerando = false;
     }
+  }
+
+  // IA gratuita (Hugging Face) — mesma função usada na aba Provador Virtual
+  function processarGratuitaMia(minha) {
+    const p = mia.peca;
+    return processarNoHuggingFace(mia.pessoa, { tipo: 'catalogo', peca: p, imagem: urlFoto(p, 1200), nome: p.nome }, {
+      cancelado: () => minha !== mia.tentativa,
+      mensagem: (t) => { const m = $('#miaMsg'); if (m) m.textContent = t; },
+      token: estado.provador.tokenHF
+    });
   }
 
   async function demonstracaoMia(minha) {
@@ -1870,7 +1897,11 @@
     try {
       let href, nome;
       if (r.demo) { href = r.imagem; nome = 'modaclick-imagem-demonstrativa.svg'; }
-      else {
+      else if (r.motor === 'gratuita') {
+        const resp = await fetch(r.imagem);
+        if (!resp.ok) throw new Error();
+        href = URL.createObjectURL(await resp.blob()); nome = 'modaclick-meu-look.jpg';
+      } else {
         const base = PROVADOR_IA.WORKER_URL.replace(/\/+$/, '');
         const resp = await fetch(`${base}/imagem?u=${encodeURIComponent(r.imagem)}`);
         if (!resp.ok) throw new Error();
@@ -1910,6 +1941,9 @@
     if (acao === 'salvar') salvarMia();
     if (acao === 'nova-foto') { mia.pessoa = null; mia.etapa = 'enviar'; renderModalIA(); $('#miaGaleria').click(); }
     if (acao === 'ver-deslizar' || acao === 'ver-lado') { mia.visao = acao === 'ver-lado' ? 'lado' : 'deslizar'; renderModalIA(); }
+  });
+  $('#modalIA').addEventListener('input', (e) => {
+    if (e.target.id === 'miaToken') estado.provador.tokenHF = e.target.value.trim();
   });
   $('#modalIA').addEventListener('change', (e) => {
     if (e.target.dataset.mia === 'consentimento') { mia.consentimento = e.target.checked; renderModalIA(); }
