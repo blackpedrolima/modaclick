@@ -6,6 +6,7 @@
 |---|---|
 | `index.html` | O site inteiro: Início, **Roupas**, **Moda Click IA** e **Provador Virtual** |
 | `api/chat.js` | Backend do chat Moda Click IA. Guarda a chave do Gemini em segredo |
+| `api/_conhecimento-moda.js` | **O que a Moda Click IA sabe de moda.** É aqui que vocês a treinam |
 | `api/provador-hf.js` | Backend da **IA gratuita** do provador (Hugging Face), usado no site publicado |
 | `api/provador.js` | (Opcional, pago) Backend do provador pela FASHN |
 | `package.json` / `vercel.json` | Dizem à Vercel para instalar a biblioteca do Hugging Face e dar até 5 minutos por geração |
@@ -17,6 +18,42 @@
 - **Roupas → Provador:** o botão **➕ Adicionar ao look** leva a peça para o Provador Virtual.
 - **Roupas → IA:** o botão "O que combina com ela?" faz essa pergunta para a Moda Click IA.
 - **IA → Provador:** a IA recomenda peças do catálogo, e cada uma tem o botão "Experimentar".
+
+---
+
+## Moda Click IA: como ela funciona e como treinar
+
+### O que ela faz
+- Monta **looks completos** (parte de cima + parte de baixo, ou peça única, mais jaqueta e acessórios) só com peças do catálogo.
+- Cada look aparece como um cartão com as fotos e o botão **👗 Provar este look**, que leva todas as peças de uma vez para o Provador Virtual.
+- Ela sabe o que já está no Provador: peça "Complete o look que montei no provador" e ela sugere o que falta.
+- Se a pessoa contar que tem uma peça própria ("tenho uma calça jeans preta"), a IA monta o look em volta dela.
+- Depois de cada resposta aparecem botões de próximos pedidos ("Mais arrumado", "Sem vestido"…).
+
+### Como treinar
+A IA não é "retreinada" do zero: ela aprende pelo que lê antes de cada resposta. Tudo isso está em **`api/_conhecimento-moda.js`**, em português simples, dividido em partes:
+
+| Parte | O que ensinar ali |
+|---|---|
+| `PERSONALIDADE` | Jeito de falar da consultora |
+| `ESTILOS` | O que significa cada estilo do catálogo |
+| `OCASIOES` | O que usar em cada ocasião (festa, escola, entrevista…) |
+| `CORES` | Quais cores combinam |
+| `MONTAGEM` | Como montar um look e o que o catálogo não tem |
+| `REGRAS` | O que ela nunca pode fazer |
+| `CONVERSA` | Como conduzir a conversa |
+| `EXEMPLOS` | Pedidos com a resposta ideal: **a forma mais forte de ensinar** |
+
+**Para melhorar a IA:**
+1. Testem várias perguntas no site e anotem as respostas ruins.
+2. Para cada uma, escrevam a regra que faltou (ex.: em `OCASIOES`) ou um **exemplo** novo com a resposta ideal.
+3. Enviem o arquivo para o GitHub, dentro da pasta `api`. A Vercel publica sozinha em cerca de 1 minuto.
+4. Cliquem em **Nova conversa** e testem de novo.
+
+Cuidados:
+- Nos exemplos, usem só IDs que existem no catálogo (ex.: `cam-01`).
+- Não apaguem as crases ( ` ) nem as vírgulas entre os exemplos.
+- Peças novas no catálogo (`index.html`) entram na IA automaticamente.
 
 ---
 
