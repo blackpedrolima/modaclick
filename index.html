@@ -529,7 +529,7 @@
       <input type="file" id="inPessoaCamera" accept="image/*" capture="user" hidden>
       <input type="file" id="inPessoaGaleria" accept="image/jpeg,image/png,image/webp" hidden>
 
-      <p class="aviso">A IA gratuita usa espaços públicos do Hugging Face (IDM-VTON e OOTDiffusion), chamados direto do navegador. A opção pelo servidor usa a FASHN, com a chave protegida no servidor. O ModaClick não guarda as fotos.</p>
+      <p class="aviso">A IA gratuita usa espaços públicos do Hugging Face (IDM-VTON, OOTDiffusion e Leffa), chamados pelo servidor do site. A opção pelo servidor usa a FASHN, com a chave protegida no servidor. O ModaClick não guarda as fotos.</p>
     </section>
   </main>
 
@@ -1125,7 +1125,7 @@
    *
    * Motores:
    *   'gratuita' → Hugging Face direto do navegador (sem servidor e sem chave):
-   *                parte de cima = IDM-VTON · parte de baixo e peça única = OOTDiffusion
+   *                parte de cima = IDM-VTON · parte de baixo = OOTDiffusion · peça única = Leffa (reserva: OOTDiffusion)
    *   'servidor' → FASHN pelo servidor do site (api/provador.js, chave paga FASHN_API_KEY)
    *   'comparar' → teste sem IA: só mostra as fotos lado a lado
    *
@@ -1139,7 +1139,8 @@
     // Versão anterior da biblioteca, usada se a nova não conseguir conectar a espaços mais antigos
     URL_GRADIO_ANTIGO: 'https://cdn.jsdelivr.net/npm/@gradio/client@1.8.0/dist/index.min.js',
     ESPACO_CIMA: 'yisol/IDM-VTON',           // IA gratuita para a parte de cima
-    ESPACO_CORPO: 'levihsu/OOTDiffusion',    // IA gratuita para parte de baixo e peça única
+    ESPACO_CORPO: 'levihsu/OOTDiffusion',    // IA gratuita para a parte de baixo (e reserva da peça única)
+    ESPACO_VESTIDO: 'franciszzj/Leffa',      // IA gratuita para vestidos e macacões: cobre o corpo todo
     INTERVALO_CONSULTA: 2500,
     TEMPO_LIMITE: 180000,
     INTERVALO_MSG: 3500,
@@ -1349,7 +1350,7 @@
       </label>`;
     $('#motores').innerHTML =
       card('gratuita', '🤗 IA gratuita', `<span class="etiqueta-motor">${pv.hf && pv.hf.pronto ? 'pelo servidor do site · grátis' : 'direto no navegador · grátis'}</span>`,
-        'Parte de cima: IDM-VTON. Parte de baixo e peça única: OOTDiffusion. Pode ter fila.',
+        'Parte de cima: IDM-VTON. Parte de baixo: OOTDiffusion. Vestidos e macacões: Leffa, que cobre o corpo todo. Pode ter fila.',
         m !== 'gratuita' ? '' : pv.hf && pv.hf.token ? '<span class="campo-token"><small>✅ Token do Hugging Face configurado no servidor do site.</small></span>' : `<span class="campo-token"><small>Token do Hugging Face (opcional, aumenta a cota grátis) · fica salvo só neste navegador</small><input type="password" id="tokenHF" placeholder="hf_..." autocomplete="off" value="${esc(pv.tokenHF)}">${pv.tokenHF ? '<a href="#" data-esquecer-token style="font-size:.75rem;color:var(--rosa-escuro);text-decoration:underline">Esquecer token</a>' : ''}</span>`) +
       card('servidor', '🖥️ IA pelo servidor', `<span class="etiqueta-motor${servidorOk ? '' : ' cinza'}">${servidorOk ? 'FASHN · melhor qualidade' : 'paga · não configurada'}</span>`,
         servidorOk ? 'Prova virtual da FASHN, mais fiel à peça.' : 'Opcional e pago: precisa da chave FASHN_API_KEY no servidor do site.', '', !servidorOk) +
@@ -1527,7 +1528,7 @@
   }
 
   /* ---------- IA GRATUITA (Hugging Face, direto do navegador) ----------
-     Parte de cima → IDM-VTON (/tryon) · parte de baixo e peça única → OOTDiffusion (/process_dc).
+     Parte de cima → IDM-VTON (/tryon) · parte de baixo → OOTDiffusion (/process_dc) · peça única → Leffa (/leffa_predict_vt), com OOTDiffusion de reserva.
      Funciona no site publicado e abrindo o arquivo no navegador.
      Não funciona na prévia do Claude, que bloqueia conexões externas. */
   function traduzirErroHF(texto) {
@@ -1623,8 +1624,23 @@
       try { return await processarHFPeloServidor(pessoa, roupa, foiCancelado, token); }
       catch (e) { if (!e.semServidor) throw e; }
     }
-    const parteDeCima = roupa.categoria === 'tops';
-    const espaco = parteDeCima ? PROVADOR.ESPACO_CIMA : PROVADOR.ESPACO_CORPO;
+    // Peça única: Leffa primeiro (a máscara dele cobre o corpo todo, com as pernas); OOTDiffusion de reserva
+    const lista = roupa.categoria === 'tops' ? [PROVADOR.ESPACO_CIMA]
+      : roupa.categoria === 'one-pieces' ? [PROVADOR.ESPACO_VESTIDO, PROVADOR.ESPACO_CORPO]
+      : [PROVADOR.ESPACO_CORPO];
+    let ultimoErro;
+    for (const espaco of lista) {
+      try { return await tentarEspacoHF(espaco, pessoa, roupa, token, foiCancelado, mostrarMsg, cancelar); }
+      catch (e) {
+        ultimoErro = e;
+        if (e.cancelado || /cota/i.test(e.message) || espaco === lista[lista.length - 1]) throw e;
+        mostrarMsg('A IA preferida não respondeu. Tentando outra IA gratuita…');
+      }
+    }
+    throw ultimoErro;
+  }
+
+  async function tentarEspacoHF(espaco, pessoa, roupa, token, foiCancelado, mostrarMsg, cancelar) {
     const { app, handle_file } = await conectarEspaco(espaco, token);
     cancelar();
 
@@ -1644,25 +1660,40 @@
     const roupaArquivo = roupa.tipo === 'catalogo' && ehFotoUnsplash(roupa.imagem) ? handle_file(roupa.imagem) : await comoArquivo(roupa.imagem, 'roupa.jpg');
     cancelar();
 
-    const tarefa = parteDeCima
-      ? app.submit('/tryon', {
-          dict: { background: pessoaArquivo, layers: [], composite: null },   // a pessoa
-          garm_img: roupaArquivo,                                               // a roupa
-          garment_des: roupa.nome,
-          is_checked: true,          // máscara automática: troca só tronco e braços
-          is_checked_crop: false,
-          denoise_steps: 30,
-          seed: 42
-        })
-      : app.submit('/process_dc', {
-          vton_img: pessoaArquivo,                                              // a pessoa (corpo inteiro)
-          garm_img: roupaArquivo,                                               // a roupa
-          category: roupa.categoria === 'bottoms' ? 'Lower-body' : 'Dress',     // troca só a parte de baixo, ou o vestido
-          n_samples: 1,
-          n_steps: 20,
-          image_scale: 2,
-          seed: -1
-        });
+    let tarefa;
+    if (espaco === PROVADOR.ESPACO_CIMA) {
+      tarefa = app.submit('/tryon', {
+        dict: { background: pessoaArquivo, layers: [], composite: null },   // a pessoa
+        garm_img: roupaArquivo,                                               // a roupa
+        garment_des: roupa.nome,
+        is_checked: true,          // máscara automática: troca só tronco e braços
+        is_checked_crop: false,
+        denoise_steps: 30,
+        seed: 42
+      });
+    } else if (espaco === PROVADOR.ESPACO_VESTIDO) {
+      tarefa = app.submit('/leffa_predict_vt', {
+        src_image_path: pessoaArquivo,                                        // a pessoa (corpo inteiro)
+        ref_image_path: roupaArquivo,                                         // o vestido ou macacão
+        ref_acceleration: false,
+        step: 30,
+        scale: 2.5,
+        seed: 42,
+        vt_model_type: 'dress_code',   // modelo treinado com vestidos e peças inteiras
+        vt_garment_type: 'dresses',    // máscara do corpo todo, incluindo as pernas
+        vt_repaint: false
+      });
+    } else {
+      tarefa = app.submit('/process_dc', {
+        vton_img: pessoaArquivo,                                              // a pessoa (corpo inteiro)
+        garm_img: roupaArquivo,                                               // a roupa
+        category: roupa.categoria === 'bottoms' ? 'Lower-body' : 'Dress',     // troca só a parte de baixo, ou o vestido
+        n_samples: 1,
+        n_steps: 20,
+        image_scale: 2,
+        seed: -1
+      });
+    }
 
     for await (const msg of tarefa) {
       if (foiCancelado()) { try { tarefa.cancel && tarefa.cancel(); } catch {} cancelar(); }
@@ -1801,7 +1832,7 @@
     const r = pv.resultado;
     if (!r) return;
     if (r.tipo === 'comparacao') return renderComparacao(r);
-    const nomeMotor = r.motor === 'servidor' ? 'a IA da FASHN (servidor)' : 'a IA gratuita do Hugging Face (IDM-VTON / OOTDiffusion)';
+    const nomeMotor = r.motor === 'servidor' ? 'a IA da FASHN (servidor)' : 'a IA gratuita do Hugging Face (IDM-VTON / OOTDiffusion / Leffa)';
     $('#etapaResultado').innerHTML = `
       <div class="resultado">
         <div>
@@ -1932,7 +1963,7 @@
 
   /* ============== JANELA "EXPERIMENTAR COM IA" (prova rápida de UMA peça) ==============
      Usa a mesma IA gratuita do provador (IDM-VTON para parte de cima,
-     OOTDiffusion para parte de baixo e peça única). Para combinar várias peças,
+     OOTDiffusion para a parte de baixo, Leffa para a peça única). Para combinar várias peças,
      o botão "Montar look completo" leva ao Provador Virtual. */
   const mia = { peca: null, pessoa: null, consentimento: false, etapa: 'enviar', gerando: false, tentativa: 0, resultado: null, visao: 'deslizar', focoAnterior: null };
 
@@ -1975,7 +2006,7 @@
       : `<div class="mia-foto soltar" data-mia-soltar>${ICONE_PESSOA}<strong>Arraste sua foto aqui</strong><small>Corpo inteiro, de frente, com boa luz</small></div>
          <div class="mia-acoes"><button class="botao leve pequeno" data-mia="camera">📷 Tirar foto</button><button class="botao leve pequeno" data-mia="galeria">🖼️ Galeria</button></div>`;
     const prontos = !!mia.pessoa && mia.consentimento;
-    const qual = CATEGORIA_TRYON[p.categoria] === 'tops' ? 'só no tronco e nos braços (IDM-VTON)' : CATEGORIA_TRYON[p.categoria] === 'bottoms' ? 'só na parte de baixo (OOTDiffusion)' : 'no lugar da roupa do corpo (OOTDiffusion)';
+    const qual = CATEGORIA_TRYON[p.categoria] === 'tops' ? 'só no tronco e nos braços (IDM-VTON)' : CATEGORIA_TRYON[p.categoria] === 'bottoms' ? 'só na parte de baixo (OOTDiffusion)' : 'no corpo todo, das alças até a barra, inclusive sobre as pernas (Leffa)';
     corpo.innerHTML = `
       <div class="mia-banner" style="background:#fffafc;border-color:#f59ac0;color:#7a2e50">🤗 <b>IA gratuita (Hugging Face).</b> Aplica a peça ${qual} e mantém o resto da sua foto. Pode ter fila.
         ${estado.provador.hf && estado.provador.hf.token ? '' : `<span class="campo-token" style="margin-top:8px"><small>Token do Hugging Face (opcional, aumenta a cota grátis) · fica salvo só neste navegador</small><input type="password" id="miaToken" placeholder="hf_..." autocomplete="off" value="${esc(estado.provador.tokenHF)}"></span>`}</div>
@@ -1988,7 +2019,7 @@
         <div class="mia-bloco">
           <h3><span class="mia-passo">2</span> Sua foto de corpo</h3>
           ${fotoPessoa}
-          <span class="mia-dica">${CATEGORIA_TRYON[p.categoria] === 'tops' ? 'De frente, da cintura para cima ou corpo inteiro.' : 'De corpo inteiro, de frente, em pé.'} Só uma pessoa na foto.</span>
+          <span class="mia-dica">${CATEGORIA_TRYON[p.categoria] === 'tops' ? 'De frente, da cintura para cima ou corpo inteiro.' : CATEGORIA_TRYON[p.categoria] === 'one-pieces' ? 'De corpo inteiro (da cabeça aos pés), de frente, em pé, braços soltos ao lado do corpo.' : 'De corpo inteiro, de frente, em pé.'} Só uma pessoa na foto.</span>
         </div>
       </div>
       <label class="consentimento${mia.consentimento ? ' marcado' : ''}"><input type="checkbox" data-mia="consentimento"${mia.consentimento ? ' checked' : ''}><span><strong>Autorizo o envio da minha foto à IA gratuita do Hugging Face</strong> somente para gerar este look. O ModaClick não guarda a foto. O espaço público guarda a foto temporariamente para processar o pedido.</span></label>
