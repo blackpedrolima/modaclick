@@ -77,7 +77,7 @@ Acessórios (bolsas, óculos, joias) não entram no provador.
 ### As IAs usadas (escolhidas em "Como juntar as fotos?")
 | Opção | Precisa de quê | O que faz |
 |---|---|---|
-| 🤗 **IA gratuita** (padrão) | Nada (o token `HF_TOKEN` é opcional) | **Parte de cima → IDM-VTON** (`yisol/IDM-VTON`). **Parte de baixo → OOTDiffusion** (`levihsu/OOTDiffusion`). **Vestidos e macacões → Leffa** (`franciszzj/Leffa`, modelo DressCode), que cobre o corpo todo, inclusive as pernas. Se o Leffa estiver fora do ar, o site usa o OOTDiffusion. No site publicado, quem chama a IA é o **servidor da Vercel** (`api/provador-hf.js`), porque esses espaços recusam chamadas feitas direto do navegador ("Failed to fetch"). Sem servidor, o site tenta pelo navegador. |
+| 🤗 **IA gratuita** (padrão) | Nada (o token `HF_TOKEN` é opcional) | **Parte de cima → IDM-VTON** (`yisol/IDM-VTON`). **Calças, saias, vestidos e macacões → Leffa** (`franciszzj/Leffa`, modelo DressCode), que também redesenha as pernas, então a calça desce até o tornozelo. Se o Leffa estiver fora do ar, o site usa a OOTDiffusion (`levihsu/OOTDiffusion`). Nas calças e saias, o botão **"Testar com a OOTDiffusion"** gera a mesma peça na outra IA para comparar. No site publicado, quem chama a IA é o **servidor da Vercel** (`api/provador-hf.js`), porque esses espaços recusam chamadas feitas direto do navegador ("Failed to fetch"). Sem servidor, o site tenta pelo navegador. |
 | 🖥️ **IA pelo servidor** | Chave paga `FASHN_API_KEY` na Vercel | FASHN, mais fiel à peça. Também aplica uma peça de cada vez. |
 | 👀 **Teste sem IA** | Nada | Só mostra as fotos lado a lado, para testar a seleção. Não troca a roupa. |
 
@@ -89,6 +89,7 @@ Acessórios (bolsas, óculos, joias) não entram no provador.
 - Os espaços são públicos e de terceiros: se um sair do ar, aquela parte para até ele voltar.
 - **Parte de baixo e vestidos** funcionam melhor com foto de **corpo inteiro**, de frente e em pé.
 - **Vestidos e macacões:** a foto precisa mostrar a pessoa **da cabeça aos pés**, com os braços soltos. Se as pernas ou os pés estiverem cortados, a IA não tem onde desenhar a parte de baixo do vestido.
+- **Calças, saias e vestidos:** prefira a pessoa **calçada** na foto. Para o Leffa, pé descalço conta como perna, e os pés podem sair borrados.
 - A foto da peça faz diferença: **vestido sozinho, de frente e em fundo liso** dá resultado bem melhor que a foto de uma modelo usando o vestido.
 - Cada peça leva de 30 segundos a alguns minutos. Um look com 2 peças leva o dobro.
 

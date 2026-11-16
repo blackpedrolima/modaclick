@@ -1130,7 +1130,7 @@
    *
    * Motores:
    *   'gratuita' → Hugging Face direto do navegador (sem servidor e sem chave):
-   *                parte de cima = IDM-VTON · parte de baixo = OOTDiffusion · peça única = Leffa (reserva: OOTDiffusion)
+   *                parte de cima = IDM-VTON · parte de baixo e peça única = Leffa (reserva: OOTDiffusion)
    *   'servidor' → FASHN pelo servidor do site (api/provador.js, chave paga FASHN_API_KEY)
    *   'comparar' → teste sem IA: só mostra as fotos lado a lado
    *
@@ -1144,8 +1144,8 @@
     // Versão anterior da biblioteca, usada se a nova não conseguir conectar a espaços mais antigos
     URL_GRADIO_ANTIGO: 'https://cdn.jsdelivr.net/npm/@gradio/client@1.8.0/dist/index.min.js',
     ESPACO_CIMA: 'yisol/IDM-VTON',           // IA gratuita para a parte de cima
-    ESPACO_CORPO: 'levihsu/OOTDiffusion',    // IA gratuita para a parte de baixo (e reserva da peça única)
-    ESPACO_VESTIDO: 'franciszzj/Leffa',      // IA gratuita para vestidos e macacões: cobre o corpo todo
+    ESPACO_CORPO: 'levihsu/OOTDiffusion',    // reserva da parte de baixo e da peça única
+    ESPACO_VESTIDO: 'franciszzj/Leffa',      // IA gratuita para partes de baixo, vestidos e macacões (cobre as pernas)
     INTERVALO_CONSULTA: 2500,
     TEMPO_LIMITE: 180000,
     INTERVALO_MSG: 3500,
@@ -1329,7 +1329,7 @@
         </div>`;
     }
     return `${titulo}
-      <p class="dica">De corpo inteiro, de frente, em pé, com boa luz e só uma pessoa na foto. Roupas justas ajudam a IA a entender o corpo.</p>
+      <p class="dica">De corpo inteiro (da cabeça aos pés), de frente, em pé, com boa luz e só uma pessoa na foto. Roupas justas ajudam a IA a entender o corpo. Para calças, saias e vestidos, prefira a pessoa <b>calçada</b>: pés descalços podem sair borrados.</p>
       <div class="preview aguardando" data-soltar="pessoa">${ICONE_PESSOA}<strong>Arraste sua foto aqui</strong><small>JPG, PNG ou WEBP</small></div>
       <div class="acoes-foto">
         <button class="botao leve pequeno" data-foto="pessoa-camera">📷 Tirar foto</button>
@@ -1356,7 +1356,7 @@
       </label>`;
     $('#motores').innerHTML =
       card('gratuita', '🤗 IA gratuita', `<span class="etiqueta-motor">${pv.hf && pv.hf.pronto ? 'pelo servidor do site · grátis' : 'direto no navegador · grátis'}</span>`,
-        'Parte de cima: IDM-VTON. Parte de baixo: OOTDiffusion. Vestidos e macacões: Leffa, que cobre o corpo todo. Pode ter fila.',
+        'Parte de cima: IDM-VTON. Calças, saias, vestidos e macacões: Leffa, que cobre também as pernas. Pode ter fila.',
         m !== 'gratuita' ? '' : pv.hf && pv.hf.token ? '<span class="campo-token"><small>✅ Token do Hugging Face configurado no servidor do site.</small></span>' : `<span class="campo-token"><small>Token do Hugging Face (opcional, aumenta a cota grátis) · fica salvo só neste navegador</small><input type="password" id="tokenHF" placeholder="hf_..." autocomplete="off" value="${esc(pv.tokenHF)}">${pv.tokenHF ? '<a href="#" data-esquecer-token style="font-size:.75rem;color:var(--rosa-escuro);text-decoration:underline">Esquecer token</a>' : ''}</span>`) +
       card('servidor', '🖥️ IA pelo servidor', `<span class="etiqueta-motor${servidorOk ? '' : ' cinza'}">${servidorOk ? 'FASHN · melhor qualidade' : 'paga · não configurada'}</span>`,
         servidorOk ? 'Prova virtual da FASHN, mais fiel à peça.' : 'Opcional e pago: precisa da chave FASHN_API_KEY no servidor do site.', '', !servidorOk) +
@@ -1534,7 +1534,7 @@
   }
 
   /* ---------- IA GRATUITA (Hugging Face, direto do navegador) ----------
-     Parte de cima → IDM-VTON (/tryon) · parte de baixo → OOTDiffusion (/process_dc) · peça única → Leffa (/leffa_predict_vt), com OOTDiffusion de reserva.
+     Parte de cima → IDM-VTON (/tryon) · parte de baixo e peça única → Leffa (/leffa_predict_vt), com OOTDiffusion (/process_dc) de reserva.
      Funciona no site publicado e abrindo o arquivo no navegador.
      Não funciona na prévia do Claude, que bloqueia conexões externas. */
   function traduzirErroHF(texto) {
@@ -1601,7 +1601,7 @@
           categoria: roupa.categoria,
           nome: roupa.nome,
           pessoa: /^https?:/i.test(pessoa) ? pessoa : await comoDataUrl(pessoa),
-          preferencia: roupa.categoria === 'bottoms' && estado.provador.iaBaixo === 'leffa' ? 'leffa' : undefined,
+          preferencia: roupa.categoria === 'bottoms' && estado.provador.iaBaixo === 'ootd' ? 'ootd' : undefined,
           roupa: roupa.tipo === 'catalogo' && ehFotoUnsplash(roupa.imagem) ? { url: roupa.imagem } : { imagem: await comoDataUrl(roupa.imagem) },
           token: estado.provador.hf && estado.provador.hf.token ? undefined : (token || undefined)
         })
@@ -1642,8 +1642,8 @@
     // Peça única: Leffa primeiro (a máscara dele cobre o corpo todo, com as pernas); OOTDiffusion de reserva
     const lista = roupa.categoria === 'tops' ? [PROVADOR.ESPACO_CIMA]
       : roupa.categoria === 'one-pieces' ? [PROVADOR.ESPACO_VESTIDO, PROVADOR.ESPACO_CORPO]
-      : estado.provador.iaBaixo === 'leffa' ? [PROVADOR.ESPACO_VESTIDO, PROVADOR.ESPACO_CORPO]   // teste: calças no Leffa
-      : [PROVADOR.ESPACO_CORPO];
+      : estado.provador.iaBaixo === 'ootd' ? [PROVADOR.ESPACO_CORPO]                               // comparação: calças na OOTDiffusion
+      : [PROVADOR.ESPACO_VESTIDO, PROVADOR.ESPACO_CORPO];                                         // calças: Leffa, com a OOTDiffusion de reserva
     let ultimoErro;
     for (const espaco of lista) {
       try { return await tentarEspacoHF(espaco, pessoa, roupa, token, foiCancelado, mostrarMsg, cancelar); }
@@ -1867,6 +1867,7 @@
             <button class="botao" id="salvarImagem">⬇️ Salvar imagem</button>
             <button class="botao leve" id="outraRoupa">👚 Trocar ou adicionar peças</button>
             <button class="botao leve" id="gerarDeNovo">🔄 Gerar novamente</button>
+            ${r.motor !== 'servidor' && r.pecas.some(p => p.categoria === 'bottoms') ? `<button class="botao leve" id="trocarIABaixo">🔁 Testar a parte de baixo com ${pv.iaBaixo === 'ootd' ? 'o Leffa' : 'a OOTDiffusion'} (comparar IAs)</button>` : ''}
             <button class="botao leve perigo" id="descartarFotos">🗑️ Descartar minhas fotos</button>
           </div>
           <p class="nota-ia">Imagem criada por ${nomeMotor}, aplicando ${r.pecas.length > 1 ? 'uma peça de cada vez' : 'a peça'} na sua foto. Pode haver pequenas diferenças em relação à peça real, como caimento, textura e tamanho.</p>
@@ -1918,6 +1919,11 @@
     });
     const gerarDeNovo = $('#gerarDeNovo');
     if (gerarDeNovo) gerarDeNovo.addEventListener('click', () => { mostrarEtapa('form'); gerarLook(); });
+    const trocarIABaixo = $('#trocarIABaixo');   // teste: alterna a IA das partes de baixo (OOTDiffusion ↔ Leffa)
+    if (trocarIABaixo) trocarIABaixo.addEventListener('click', () => {
+      estado.provador.iaBaixo = estado.provador.iaBaixo === 'ootd' ? 'leffa' : 'ootd';
+      mostrarEtapa('form'); gerarLook();
+    });
     $('#descartarFotos').addEventListener('click', () => {
       Object.assign(estado.provador, { pessoa: null, resultado: null, consentimento: false });
       for (const k of Object.keys(estado.look)) if (estado.look[k] && estado.look[k].tipo === 'upload') estado.look[k] = null;
@@ -1979,7 +1985,7 @@
 
   /* ============== JANELA "EXPERIMENTAR COM IA" (prova rápida de UMA peça) ==============
      Usa a mesma IA gratuita do provador (IDM-VTON para parte de cima,
-     OOTDiffusion para a parte de baixo, Leffa para a peça única). Para combinar várias peças,
+     Leffa para a parte de baixo e a peça única). Para combinar várias peças,
      o botão "Montar look completo" leva ao Provador Virtual. */
   const mia = { peca: null, pessoa: null, consentimento: false, etapa: 'enviar', gerando: false, tentativa: 0, resultado: null, visao: 'deslizar', focoAnterior: null };
 
@@ -2022,7 +2028,7 @@
       : `<div class="mia-foto soltar" data-mia-soltar>${ICONE_PESSOA}<strong>Arraste sua foto aqui</strong><small>Corpo inteiro, de frente, com boa luz</small></div>
          <div class="mia-acoes"><button class="botao leve pequeno" data-mia="camera">📷 Tirar foto</button><button class="botao leve pequeno" data-mia="galeria">🖼️ Galeria</button></div>`;
     const prontos = !!mia.pessoa && mia.consentimento;
-    const qual = CATEGORIA_TRYON[p.categoria] === 'tops' ? 'só no tronco e nos braços (IDM-VTON)' : CATEGORIA_TRYON[p.categoria] === 'bottoms' ? 'só na parte de baixo (OOTDiffusion)' : 'no corpo todo, das alças até a barra, inclusive sobre as pernas (Leffa)';
+    const qual = CATEGORIA_TRYON[p.categoria] === 'tops' ? 'só no tronco e nos braços (IDM-VTON)' : CATEGORIA_TRYON[p.categoria] === 'bottoms' ? 'só na parte de baixo, da cintura aos tornozelos (Leffa)' : 'no corpo todo, das alças até a barra, inclusive sobre as pernas (Leffa)';
     corpo.innerHTML = `
       <div class="mia-banner" style="background:#fffafc;border-color:#f59ac0;color:#7a2e50">🤗 <b>IA gratuita (Hugging Face).</b> Aplica a peça ${qual} e mantém o resto da sua foto. Pode ter fila.
         ${estado.provador.hf && estado.provador.hf.token ? '' : `<span class="campo-token" style="margin-top:8px"><small>Token do Hugging Face (opcional, aumenta a cota grátis) · fica salvo só neste navegador</small><input type="password" id="miaToken" placeholder="hf_..." autocomplete="off" value="${esc(estado.provador.tokenHF)}"></span>`}</div>
@@ -2036,7 +2042,7 @@
         <div class="mia-bloco">
           <h3><span class="mia-passo">2</span> Sua foto de corpo</h3>
           ${fotoPessoa}
-          <span class="mia-dica">${CATEGORIA_TRYON[p.categoria] === 'tops' ? 'De frente, da cintura para cima ou corpo inteiro.' : CATEGORIA_TRYON[p.categoria] === 'one-pieces' ? 'De corpo inteiro (da cabeça aos pés), de frente, em pé, braços soltos ao lado do corpo.' : 'De corpo inteiro, de frente, em pé.'} Só uma pessoa na foto.</span>
+          <span class="mia-dica">${CATEGORIA_TRYON[p.categoria] === 'tops' ? 'De frente, da cintura para cima ou corpo inteiro.' : CATEGORIA_TRYON[p.categoria] === 'one-pieces' ? 'De corpo inteiro (da cabeça aos pés), de frente, em pé, braços soltos ao lado do corpo, de preferência calçada.' : 'De corpo inteiro (da cabeça aos pés), de frente, em pé, de preferência calçada: pés descalços podem sair borrados.'} Só uma pessoa na foto.</span>
         </div>
       </div>
       <label class="consentimento${mia.consentimento ? ' marcado' : ''}"><input type="checkbox" data-mia="consentimento"${mia.consentimento ? ' checked' : ''}><span><strong>Autorizo o envio da minha foto à IA gratuita do Hugging Face</strong> somente para gerar este look. O ModaClick não guarda a foto. O espaço público guarda a foto temporariamente para processar o pedido.</span></label>
@@ -2078,7 +2084,7 @@
             <button class="botao" data-mia="salvar">⬇️ Salvar imagem</button>
             <button class="botao leve" data-mia="look">➕ Montar look completo</button>
             <button class="botao leve" data-mia="gerar">🔄 Gerar novamente</button>
-            ${CATEGORIA_TRYON[mia.peca.categoria] === 'bottoms' ? `<button class="botao leve" data-mia="trocar-ia">🔁 Testar com ${estado.provador.iaBaixo === 'leffa' ? 'a OOTDiffusion' : 'o Leffa'} (comparar IAs)</button>` : ''}
+            ${CATEGORIA_TRYON[mia.peca.categoria] === 'bottoms' ? `<button class="botao leve" data-mia="trocar-ia">🔁 Testar com ${estado.provador.iaBaixo === 'ootd' ? 'o Leffa' : 'a OOTDiffusion'} (comparar IAs)</button>` : ''}
             <button class="botao leve" data-mia="nova-foto">🧍‍♀️ Usar outra foto</button>
             <button class="botao leve" data-mia="fechar">Fechar</button>
           </div>
@@ -2144,7 +2150,7 @@
     if (acao === 'remover') { mia.pessoa = null; renderModalIA(); }
     if (acao === 'gerar') gerarMia();
     if (acao === 'trocar-ia') {   // teste: alterna a IA das partes de baixo entre OOTDiffusion e Leffa
-      estado.provador.iaBaixo = estado.provador.iaBaixo === 'leffa' ? 'ootd' : 'leffa';
+      estado.provador.iaBaixo = estado.provador.iaBaixo === 'ootd' ? 'leffa' : 'ootd';
       gerarMia();
     }
     if (acao === 'cancelar') { mia.tentativa++; mia.gerando = false; mia.etapa = 'enviar'; renderModalIA(); }
