@@ -8,7 +8,9 @@
 //
 //  IAs usadas:
 //    parte de cima           → yisol/IDM-VTON       (/tryon)
-//    parte de baixo          → levihsu/OOTDiffusion (/process_dc, Lower-body)
+//    parte de baixo          → franciszzj/Leffa     (/leffa_predict_vt, DressCode + "lower_body")
+//                              Reserva: OOTDiffusion (Lower-body). Pés descalços podem sair borrados
+//                              (para o Leffa, pé descalço conta como perna): prefira fotos com calçado.
 //    vestido / macacão       → franciszzj/Leffa     (/leffa_predict_vt, DressCode + "dresses")
 //                              Se o Leffa estiver fora do ar, usa o OOTDiffusion (Dress).
 //    Por que o Leffa nas peças únicas? A máscara de vestido dele inclui as PERNAS,
@@ -31,7 +33,7 @@
 // Cada tipo de peça tem uma lista de IAs: a primeira é a preferida; as outras são reserva.
 const ESPACOS = {
   tops: ['yisol/IDM-VTON'],
-  bottoms: ['levihsu/OOTDiffusion'],
+  bottoms: ['franciszzj/Leffa', 'levihsu/OOTDiffusion'],   // Leffa ficou melhor nos testes com calças
   'one-pieces': ['franciszzj/Leffa', 'levihsu/OOTDiffusion']
 };
 const HOSTS_ROUPA = ['images.unsplash.com'];                 // fotos do catálogo
@@ -191,9 +193,9 @@ async function gerarCom(espaco, { categoria, pessoa, roupa, nome, token, prazo }
 // Cota de GPU esgotada não muda de uma IA para outra (a cota é da conta), então aí não adianta tentar a reserva.
 async function gerar(dados) {
   dados = { ...dados, prazo: Date.now() + TEMPO_LIMITE };   // o tempo total (todas as tentativas) cabe no limite da Vercel
-  // Teste pedido pelo site: calças no Leffa (com a OOTDiffusion de reserva)
-  const lista = dados.categoria === 'bottoms' && dados.preferencia === 'leffa'
-    ? ['franciszzj/Leffa', 'levihsu/OOTDiffusion']
+  // Comparação pedida pelo site: calças direto na OOTDiffusion
+  const lista = dados.categoria === 'bottoms' && dados.preferencia === 'ootd'
+    ? ['levihsu/OOTDiffusion']
     : ESPACOS[dados.categoria];
   const erros = [];
   for (const espaco of lista) {
@@ -243,7 +245,7 @@ module.exports = async function handler(req, res) {
     const tokenSite = typeof corpo.token === 'string' && /^hf_[A-Za-z0-9]{10,}$/.test(corpo.token) ? corpo.token : null;
     const token = process.env.HF_TOKEN || tokenSite;
 
-    const r = await gerar({ categoria: corpo.categoria, pessoa: corpo.pessoa, roupa: corpo.roupa, nome: corpo.nome, token, preferencia: corpo.preferencia === 'leffa' ? 'leffa' : null });
+    const r = await gerar({ categoria: corpo.categoria, pessoa: corpo.pessoa, roupa: corpo.roupa, nome: corpo.nome, token, preferencia: corpo.preferencia === 'ootd' ? 'ootd' : null });
     return res.status(200).json(r);
   } catch (e) {
     if (e instanceof ErroAmigavel) return res.status(e.status).json({ erro: e.message });
