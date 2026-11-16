@@ -319,6 +319,7 @@
     .mia-foto.soltar small { color: var(--texto-suave); font-size: .8rem; }
     .mia-nome { font-weight: 600; }
     .mia-dica { font-size: .8rem; color: var(--texto-suave); }
+    .aviso-modelo { display: block; margin-top: 6px; font-size: .76rem; line-height: 1.35; color: #6b4a00; background: #fff8e6; border: 1px solid #f3dc9b; border-radius: 10px; padding: 6px 9px; }
     .mia-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
     .mia-acoes .botao { flex: 1 1 auto; }
     .mia-rodape { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
@@ -591,34 +592,34 @@
     { id: 'cal-04', nome: 'Calças jeans em três lavagens', categoria: 'Calças', cores: ['Azul','Preto','Cinza'], tamanhos: ['36','38','40','42','44'], estilo: 'Casual', descricao: 'Opções de jeans em tons diferentes para variar os looks.', foto: '1542272604-787c3835535d', credito: 'three-assorted-color-denim-bottoms-m1m2EZOZVwA' },
 
     // ----- Vestidos -----
-    { id: 'ves-01', nome: 'Vestido vermelho sem manga', categoria: 'Vestidos', cores: ['Vermelho'], tamanhos: ['PP','P','M','G','GG'], estilo: 'Festa', descricao: 'Vestido vibrante para festas e ocasiões especiais.', foto: '1595777457583-95e059d581b8', credito: 'woman-in-red-sleeveless-dress-standing-on-gray-concrete-floor-during-daytime-tyfqOL1FAQc' },
-    { id: 'ves-02', nome: 'Vestido branco ombro a ombro', categoria: 'Vestidos', cores: ['Branco'], tamanhos: ['P','M','G'], estilo: 'Romântico', descricao: 'Leve e delicado, ótimo para passeios e dias de sol.', foto: '1609505848912-b7c3b8b4beda', credito: 'woman-in-white-off-shoulder-dress-uR51HXLO7G0' },
-    { id: 'ves-03', nome: 'Vestido vermelho manga longa', categoria: 'Vestidos', cores: ['Vermelho'], tamanhos: ['PP','P','M','G'], estilo: 'Elegante', descricao: 'Elegante e marcante, ideal para jantares e eventos.', foto: '1612336307429-8a898d10e223', credito: 'woman-in-red-long-sleeve-dress-p7I07kuPSyU' },
-    { id: 'ves-04', nome: 'Vestido branco com botões', categoria: 'Vestidos', cores: ['Branco'], tamanhos: ['P','M','G','GG'], estilo: 'Casual', descricao: 'Vestido chemise com botões, confortável e fácil de combinar.', foto: '1532675432006-329c6fed7045', credito: 'woman-standing-on-green-grass-holding-brown-leather-suitcase-wearing-white-button-up-dress-7iKuB62CQBU' },
-    { id: 'ves-05', nome: 'Vestido marrom manga longa', categoria: 'Vestidos', cores: ['Marrom'], tamanhos: ['P','M','G','GG'], estilo: 'Elegante', descricao: 'Tom terroso e sofisticado para o trabalho ou o fim de tarde.', foto: '1612722432474-b971cdcea546', credito: 'woman-in-brown-long-sleeve-dress-standing-beside-gray-wall-_jd8I6yBWM4' },
-    { id: 'ves-06', nome: 'Vestido azul', categoria: 'Vestidos', cores: ['Azul'], tamanhos: ['PP','P','M','G'], estilo: 'Elegante', descricao: 'Azul intenso para eventos e ocasiões especiais.', foto: '1637227336887-a1b67bdb30fa', credito: 'a-woman-in-a-blue-dress-standing-in-front-of-a-door-dQKeCk-WpHI' },
+    { id: 'ves-01', nome: 'Vestido vermelho sem manga', categoria: 'Vestidos', cores: ['Vermelho'], tamanhos: ['PP','P','M','G','GG'], estilo: 'Festa', descricao: 'Vestido vibrante para festas e ocasiões especiais.', foto: '1595777457583-95e059d581b8', credito: 'woman-in-red-sleeveless-dress-standing-on-gray-concrete-floor-during-daytime-tyfqOL1FAQc', comModelo: true },
+    { id: 'ves-02', nome: 'Vestido branco ombro a ombro', categoria: 'Vestidos', cores: ['Branco'], tamanhos: ['P','M','G'], estilo: 'Romântico', descricao: 'Leve e delicado, ótimo para passeios e dias de sol.', foto: '1609505848912-b7c3b8b4beda', credito: 'woman-in-white-off-shoulder-dress-uR51HXLO7G0', comModelo: true },
+    { id: 'ves-03', nome: 'Vestido vermelho manga longa', categoria: 'Vestidos', cores: ['Vermelho'], tamanhos: ['PP','P','M','G'], estilo: 'Elegante', descricao: 'Elegante e marcante, ideal para jantares e eventos.', foto: '1612336307429-8a898d10e223', credito: 'woman-in-red-long-sleeve-dress-p7I07kuPSyU', comModelo: true },
+    { id: 'ves-04', nome: 'Vestido branco com botões', categoria: 'Vestidos', cores: ['Branco'], tamanhos: ['P','M','G','GG'], estilo: 'Casual', descricao: 'Vestido chemise com botões, confortável e fácil de combinar.', foto: '1532675432006-329c6fed7045', credito: 'woman-standing-on-green-grass-holding-brown-leather-suitcase-wearing-white-button-up-dress-7iKuB62CQBU', comModelo: true },
+    { id: 'ves-05', nome: 'Vestido marrom manga longa', categoria: 'Vestidos', cores: ['Marrom'], tamanhos: ['P','M','G','GG'], estilo: 'Elegante', descricao: 'Tom terroso e sofisticado para o trabalho ou o fim de tarde.', foto: '1612722432474-b971cdcea546', credito: 'woman-in-brown-long-sleeve-dress-standing-beside-gray-wall-_jd8I6yBWM4', comModelo: true },
+    { id: 'ves-06', nome: 'Vestido azul', categoria: 'Vestidos', cores: ['Azul'], tamanhos: ['PP','P','M','G'], estilo: 'Elegante', descricao: 'Azul intenso para eventos e ocasiões especiais.', foto: '1637227336887-a1b67bdb30fa', credito: 'a-woman-in-a-blue-dress-standing-in-front-of-a-door-dQKeCk-WpHI', comModelo: true },
 
     // ----- Saias -----
-    { id: 'sai-01', nome: 'Minissaia branca', categoria: 'Saias', cores: ['Branco'], tamanhos: ['PP','P','M','G'], estilo: 'Casual', descricao: 'Saia curta e leve, combina com camisetas e croppeds.', foto: '1594633313515-7ad9334a2349', credito: 'woman-in-white-mini-skirt-JWZe-4hg9aA' },
-    { id: 'sai-02', nome: 'Saia xadrez amarela', categoria: 'Saias', cores: ['Amarelo','Branco'], tamanhos: ['P','M','G'], estilo: 'Romântico', descricao: 'Estampa xadrez alegre para looks cheios de personalidade.', foto: '1509182469511-7f0b50bfa63e', credito: 'woman-in-yellow-and-white-checked-skirt-AaASnb3rC-M' },
-    { id: 'sai-03', nome: 'Saia branca midi', categoria: 'Saias', cores: ['Branco'], tamanhos: ['P','M','G','GG'], estilo: 'Clássico', descricao: 'Comprimento midi, fica linda com cardigã e tênis.', foto: '1582142306909-195724d33ffc', credito: 'woman-in-gray-cardigan-and-white-skirt-standing-on-sidewalk-during-daytime-5pmpSRctZb0' },
+    { id: 'sai-01', nome: 'Minissaia branca', categoria: 'Saias', cores: ['Branco'], tamanhos: ['PP','P','M','G'], estilo: 'Casual', descricao: 'Saia curta e leve, combina com camisetas e croppeds.', foto: '1594633313515-7ad9334a2349', credito: 'woman-in-white-mini-skirt-JWZe-4hg9aA', comModelo: true },
+    { id: 'sai-02', nome: 'Saia xadrez amarela', categoria: 'Saias', cores: ['Amarelo','Branco'], tamanhos: ['P','M','G'], estilo: 'Romântico', descricao: 'Estampa xadrez alegre para looks cheios de personalidade.', foto: '1509182469511-7f0b50bfa63e', credito: 'woman-in-yellow-and-white-checked-skirt-AaASnb3rC-M', comModelo: true },
+    { id: 'sai-03', nome: 'Saia branca midi', categoria: 'Saias', cores: ['Branco'], tamanhos: ['P','M','G','GG'], estilo: 'Clássico', descricao: 'Comprimento midi, fica linda com cardigã e tênis.', foto: '1582142306909-195724d33ffc', credito: 'woman-in-gray-cardigan-and-white-skirt-standing-on-sidewalk-during-daytime-5pmpSRctZb0', comModelo: true },
 
     // ----- Blusas -----
     { id: 'blu-01', nome: 'Blusa floral', categoria: 'Blusas', cores: ['Branco','Colorido'], tamanhos: ['PP','P','M','G'], estilo: 'Romântico', descricao: 'Estampa floral delicada para dias leves.', foto: '1564257631407-4deb1f99d992', credito: 'womens-white-and-multicolored-floral-top-gbq6pdUX6EY', enquadrar: 'contain' },
     { id: 'blu-02', nome: 'Blusa floral manga longa', categoria: 'Blusas', cores: ['Branco','Colorido'], tamanhos: ['P','M','G','GG'], estilo: 'Romântico', descricao: 'Manga longa com estampa floral, linda com jeans.', foto: '1561052623-76bca41705fe', credito: 'womens-white-and-multicolored-floral-long-sleeved-blouse-86lSfahSFjA', enquadrar: 'contain' },
     { id: 'blu-03', nome: 'Camisa azul de botão', categoria: 'Blusas', cores: ['Azul'], tamanhos: ['PP','P','M','G','GG'], estilo: 'Trabalho', descricao: 'Camisa social de manga longa, ótima para o trabalho.', foto: '1626497764746-6dc36546b388', credito: 'blue-button-up-long-sleeve-shirt-hT1R6Z5pY5I', enquadrar: 'contain' },
-    { id: 'blu-04', nome: 'Blusa vermelha', categoria: 'Blusas', cores: ['Vermelho'], tamanhos: ['P','M','G'], estilo: 'Elegante', descricao: 'Vermelho elegante que valoriza colares e acessórios.', foto: '1761117228880-df2425bd70da', credito: 'a-woman-in-a-red-blouse-with-a-necklace-gW4IWjDOZ8Q' },
+    { id: 'blu-04', nome: 'Blusa vermelha', categoria: 'Blusas', cores: ['Vermelho'], tamanhos: ['P','M','G'], estilo: 'Elegante', descricao: 'Vermelho elegante que valoriza colares e acessórios.', foto: '1761117228880-df2425bd70da', credito: 'a-woman-in-a-red-blouse-with-a-necklace-gW4IWjDOZ8Q', comModelo: true },
 
     // ----- Jaquetas -----
     { id: 'jaq-01', nome: 'Jaqueta jeans', categoria: 'Jaquetas', cores: ['Azul'], tamanhos: ['PP','P','M','G','GG'], estilo: 'Casual', descricao: 'A jaqueta que combina com vestidos, saias e calças.', foto: '1611312449408-fcece27cdbb7', credito: 'blue-denim-button-up-jacket-QRN47la37gw', enquadrar: 'contain' },
     { id: 'jaq-02', nome: 'Jaqueta jeans lavada', categoria: 'Jaquetas', cores: ['Azul'], tamanhos: ['P','M','G','GG'], estilo: 'Streetwear', descricao: 'Lavagem clara com visual despojado.', foto: '1543076447-215ad9ba6923', credito: 'blue-washed-jacket-hanging-on-white-door-_BDBEP0ePQc' },
-    { id: 'jaq-03', nome: 'Jaqueta jeans escura', categoria: 'Jaquetas', cores: ['Azul'], tamanhos: ['PP','P','M','G'], estilo: 'Casual', descricao: 'Tom mais escuro para looks urbanos.', foto: '1601036572102-f8cd483c9518', credito: 'woman-in-blue-denim-jacket-standing-near-black-metal-fence-during-daytime-p4N0MnVJTeI' },
+    { id: 'jaq-03', nome: 'Jaqueta jeans escura', categoria: 'Jaquetas', cores: ['Azul'], tamanhos: ['PP','P','M','G'], estilo: 'Casual', descricao: 'Tom mais escuro para looks urbanos.', foto: '1601036572102-f8cd483c9518', credito: 'woman-in-blue-denim-jacket-standing-near-black-metal-fence-during-daytime-p4N0MnVJTeI', comModelo: true },
     { id: 'jaq-04', nome: 'Jaqueta de couro preta', categoria: 'Jaquetas', cores: ['Preto'], tamanhos: ['P','M','G','GG'], estilo: 'Streetwear', descricao: 'Jaqueta estilo motociclista com zíperes e cinto, deixa qualquer look mais rock.', arquivo: 'img/jaq-04.jpg', enquadrar: 'contain' },
     { id: 'jaq-05', nome: 'Moletom cinza com capuz', categoria: 'Jaquetas', cores: ['Cinza'], tamanhos: ['PP','P','M','G','GG'], estilo: 'Casual', descricao: 'Moletom mescla com zíper e capuz, confortável para os dias frios e para a escola.', arquivo: 'img/jaq-05.jpg', enquadrar: 'contain' },
 
     // ----- Conjuntos -----
-    { id: 'con-01', nome: 'Macacão', categoria: 'Conjuntos', cores: ['Preto'], tamanhos: ['PP','P','M','G'], estilo: 'Elegante', descricao: 'Peça única que já vira um look completo.', foto: '1495385794356-15371f348c31', credito: 'woman-wearing-jumpsuit-standing-on-floor-c5t_j1zlk1Y' },
-    { id: 'con-02', nome: 'Conjunto esportivo', categoria: 'Conjuntos', cores: ['Cinza'], tamanhos: ['P','M','G','GG'], estilo: 'Esportivo', descricao: 'Confortável para treinar ou para um look esportivo no dia a dia.', foto: '1540254597053-3901b858d40f', credito: 'running-girl-during-daytime-_1eBN9MzA_c' },
+    { id: 'con-01', nome: 'Macacão', categoria: 'Conjuntos', cores: ['Preto'], tamanhos: ['PP','P','M','G'], estilo: 'Elegante', descricao: 'Peça única que já vira um look completo.', foto: '1495385794356-15371f348c31', credito: 'woman-wearing-jumpsuit-standing-on-floor-c5t_j1zlk1Y', comModelo: true },
+    { id: 'con-02', nome: 'Conjunto esportivo', categoria: 'Conjuntos', cores: ['Cinza'], tamanhos: ['P','M','G','GG'], estilo: 'Esportivo', descricao: 'Confortável para treinar ou para um look esportivo no dia a dia.', foto: '1540254597053-3901b858d40f', credito: 'running-girl-during-daytime-_1eBN9MzA_c', comModelo: true },
 
     // ----- Acessórios -----
     { id: 'ace-01', nome: 'Bolsa transversal cinza', categoria: 'Acessórios', cores: ['Cinza'], tamanhos: ['Único'], estilo: 'Casual', descricao: 'Prática para o dia a dia, deixa as mãos livres.', foto: '1559563458-527698bf5295', credito: 'grey-leather-crossbody-bag-ZB4eQcNqVUs', enquadrar: 'contain' },
@@ -636,6 +637,9 @@
   const esc = (t) => String(t).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
   // Foto própria (campo "arquivo", ex.: 'img/jaq-04.jpg') tem prioridade sobre a do Unsplash
   const urlFoto = (p, w = 700) => p.arquivo ? p.arquivo : `https://images.unsplash.com/photo-${p.foto}?auto=format&fit=crop&w=${w}&q=75`;
+  // Peças cuja foto mostra uma pessoa usando a roupa (a IA do provador entende melhor a peça sozinha)
+  const AVISO_MODELO = '⚠️ A foto desta peça mostra uma pessoa usando a roupa. A IA do provador entende muito melhor a peça sozinha, de frente e em fundo liso, então o resultado pode sair incompleto.';
+  const NOME_IA = { 'yisol/IDM-VTON': 'IDM-VTON', 'levihsu/OOTDiffusion': 'OOTDiffusion', 'franciszzj/Leffa': 'Leffa' };
   const ehFotoUnsplash = (src) => /^https:\/\/images\.unsplash\.com\//.test(String(src));
   const urlCredito = (p) => `https://unsplash.com/photos/${p.credito}`;
   const acharPeca = (id) => CATALOGO.find(p => p.id === id);
@@ -1293,6 +1297,7 @@
           <small>${e.titulo}</small>
           <strong>${r ? esc(r.nome) : 'Vazio'}</strong>
           <span class="dica">${r ? (r.tipo === 'catalogo' ? 'Do catálogo' : 'Foto enviada por você') : esc(e.exemplo)}</span>
+          ${r && r.tipo === 'catalogo' && r.peca.comModelo ? `<span class="aviso-modelo" title="${esc(AVISO_MODELO)}">⚠️ Foto com modelo: o resultado pode sair incompleto</span>` : ''}
           <div class="acoes-foto">${botoes}</div>
         </div>
       </div>`;
@@ -1609,8 +1614,16 @@
     if (!r.ok) throw new Error(d.erro || `Erro ${r.status} no servidor da IA gratuita.`);
     if (d.semToken) avisar('O token do Hugging Face foi recusado (pode estar errado ou ter sido apagado). Gerado sem token.');
     if (!d.imagem) throw new Error('A IA gratuita não devolveu a imagem.');
+    registrarIA(d.ia);
     return d.imagem;
   }
+
+  // Guarda quais IAs geraram as últimas imagens, para mostrar no resultado
+  function registrarIA(espaco) {
+    const pv = estado.provador;
+    pv.iasRecentes = (pv.iasRecentes || []).concat([NOME_IA[espaco] || 'IA gratuita']).slice(-6);
+  }
+  const iasUsadas = (n) => [...new Set((estado.provador.iasRecentes || []).slice(-n))].join(' + ');
 
   async function processarNoHuggingFace(pessoa, roupa, opcoesUso = {}) {
     const foiCancelado = opcoesUso.cancelado || (() => estado.provador.cancelado);
@@ -1703,7 +1716,7 @@
       }
       if (msg.type === 'data') {
         const url = extrairUrl(msg.data && msg.data[0]);
-        if (url) return url;
+        if (url) { registrarIA(espaco); return url; }
         throw new Error('A IA gratuita terminou, mas não devolveu a imagem.');
       }
     }
@@ -1832,7 +1845,7 @@
     const r = pv.resultado;
     if (!r) return;
     if (r.tipo === 'comparacao') return renderComparacao(r);
-    const nomeMotor = r.motor === 'servidor' ? 'a IA da FASHN (servidor)' : 'a IA gratuita do Hugging Face (IDM-VTON / OOTDiffusion / Leffa)';
+    const nomeMotor = r.motor === 'servidor' ? 'a IA da FASHN (servidor)' : `a IA gratuita do Hugging Face (${iasUsadas(r.pecas.length) || 'IDM-VTON / OOTDiffusion / Leffa'})`;
     $('#etapaResultado').innerHTML = `
       <div class="resultado">
         <div>
@@ -2015,6 +2028,7 @@
           <h3><span class="mia-passo">1</span> Roupa selecionada</h3>
           <div class="mia-foto">${fotoHTML(p, 900)}</div>
           <span class="mia-nome">${esc(p.nome)}</span>
+          ${p.comModelo ? `<span class="aviso-modelo">${AVISO_MODELO}</span>` : ''}
         </div>
         <div class="mia-bloco">
           <h3><span class="mia-passo">2</span> Sua foto de corpo</h3>
@@ -2064,7 +2078,7 @@
             <button class="botao leve" data-mia="nova-foto">🧍‍♀️ Usar outra foto</button>
             <button class="botao leve" data-mia="fechar">Fechar</button>
           </div>
-          <p class="mia-nota">Imagem criada pela IA gratuita do Hugging Face a partir da sua foto. Pode haver pequenas diferenças no caimento, na textura e nos detalhes da peça.</p>
+          <p class="mia-nota">Imagem criada pela IA gratuita do Hugging Face${iasUsadas(1) ? ` (${iasUsadas(1)})` : ''} a partir da sua foto. Pode haver pequenas diferenças no caimento, na textura e nos detalhes da peça.</p>
         </div>
       </div>`;
     ligarComparador(corpo, 'mia');
