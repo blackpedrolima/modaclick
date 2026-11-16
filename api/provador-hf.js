@@ -7,8 +7,13 @@
 //  servidor essa regra não existe.
 //
 //  IAs usadas:
-//    parte de cima            → yisol/IDM-VTON       (/tryon)
-//    parte de baixo / vestido → levihsu/OOTDiffusion (/process_dc)
+//    parte de cima           → yisol/IDM-VTON       (/tryon)
+//    parte de baixo          → levihsu/OOTDiffusion (/process_dc, Lower-body)
+//    vestido / macacão       → franciszzj/Leffa     (/leffa_predict_vt, DressCode + "dresses")
+//                              Se o Leffa estiver fora do ar, usa o OOTDiffusion (Dress).
+//    Por que o Leffa nas peças únicas? A máscara de vestido dele inclui as PERNAS,
+//    então o vestido ou macacão pode cobrir o corpo todo. No OOTDiffusion as pernas
+//    ficam de fora: o vestido só aparece onde a pessoa já tinha roupa.
 //
 //  Variável de ambiente (Vercel → Settings → Environments → Production):
 //    HF_TOKEN  → token "Read" do Hugging Face (opcional, mas recomendado:
@@ -23,7 +28,12 @@
 //  Privacidade: nada é salvo; as fotos vão só para o espaço de IA.
 // ============================================================
 
-const ESPACOS = { tops: 'yisol/IDM-VTON', bottoms: 'levihsu/OOTDiffusion', 'one-pieces': 'levihsu/OOTDiffusion' };
+// Cada tipo de peça tem uma lista de IAs: a primeira é a preferida; as outras são reserva.
+const ESPACOS = {
+  tops: ['yisol/IDM-VTON'],
+  bottoms: ['levihsu/OOTDiffusion'],
+  'one-pieces': ['franciszzj/Leffa', 'levihsu/OOTDiffusion']
+};
 const HOSTS_ROUPA = ['images.unsplash.com'];                 // fotos do catálogo
 const HOST_HF = /(^|\.)hf\.space$|(^|\.)huggingface\.co$/i;  // resultados de etapas anteriores
 const TAMANHO_MAX = 8 * 1024 * 1024;
@@ -104,42 +114,61 @@ function traduzir(texto) {
   return 'A IA gratuita não conseguiu gerar a imagem agora' + (texto ? ` (${String(texto).slice(0, 140)})` : '') + '. Tente de novo ou use outra foto.';
 }
 
-async function gerar({ categoria, pessoa, roupa, nome, token }) {
-  const espaco = ESPACOS[categoria];
+// Como chamar cada IA (nomes dos parâmetros iguais aos dos espaços)
+function pedidoDaIA(espaco, app, categoria, fotoPessoa, fotoRoupa, nome) {
+  if (espaco === 'yisol/IDM-VTON') {
+    return app.predict('/tryon', {
+      dict: { background: fotoPessoa, layers: [], composite: null },
+      garm_img: fotoRoupa,
+      garment_des: String(nome || 'roupa').slice(0, 80),
+      is_checked: true,          // máscara automática: troca só tronco e braços
+      is_checked_crop: false,
+      denoise_steps: 30,
+      seed: 42
+    });
+  }
+  if (espaco === 'franciszzj/Leffa') {
+    return app.predict('/leffa_predict_vt', {
+      src_image_path: fotoPessoa,
+      ref_image_path: fotoRoupa,
+      ref_acceleration: false,
+      step: 30,
+      scale: 2.5,
+      seed: 42,
+      vt_model_type: 'dress_code',   // modelo treinado com vestidos e peças inteiras
+      vt_garment_type: 'dresses',    // máscara do corpo todo, incluindo as pernas
+      vt_repaint: false
+    });
+  }
+  return app.predict('/process_dc', {
+    vton_img: fotoPessoa,
+    garm_img: fotoRoupa,
+    category: categoria === 'bottoms' ? 'Lower-body' : 'Dress',
+    n_samples: 1,
+    n_steps: 20,
+    image_scale: 2,
+    seed: -1
+  });
+}
+
+async function gerarCom(espaco, { categoria, pessoa, roupa, nome, token, prazo }) {
   const { app, handle_file, semToken } = await conectar(espaco, token);
   const fotoPessoa = entrada(handle_file, pessoa, [], 'pessoa');
   const fotoRoupa = roupa.url ? entrada(handle_file, roupa.url, HOSTS_ROUPA, 'roupa') : entrada(handle_file, roupa.imagem, [], 'roupa');
+  const pedido = pedidoDaIA(espaco, app, categoria, fotoPessoa, fotoRoupa, nome);
 
-  const pedido = categoria === 'tops'
-    ? app.predict('/tryon', {
-        dict: { background: fotoPessoa, layers: [], composite: null },
-        garm_img: fotoRoupa,
-        garment_des: String(nome || 'roupa').slice(0, 80),
-        is_checked: true,          // máscara automática: troca só tronco e braços
-        is_checked_crop: false,
-        denoise_steps: 30,
-        seed: 42
-      })
-    : app.predict('/process_dc', {
-        vton_img: fotoPessoa,
-        garm_img: fotoRoupa,
-        category: categoria === 'bottoms' ? 'Lower-body' : 'Dress',
-        n_samples: 1,
-        n_steps: 20,
-        image_scale: 2,
-        seed: -1
-      });
-
-  let resposta;
+  let resposta, relogio;
   try {
     resposta = await Promise.race([
       pedido,
-      new Promise((_, falha) => setTimeout(() => falha(new Error('tempo esgotado')), TEMPO_LIMITE))
+      new Promise((_, falha) => { relogio = setTimeout(() => falha(new Error('tempo esgotado')), Math.max(1000, prazo - Date.now())); })
     ]);
   } catch (e) {
     const msg = (e && (e.message || (e.original_msg) || (e.title))) || String(e);
     if (/tempo esgotado/.test(msg)) throw new ErroAmigavel('A IA gratuita demorou demais (fila cheia). Tente de novo em alguns minutos.', 504);
     throw new ErroAmigavel(traduzir(msg));
+  } finally {
+    clearTimeout(relogio);
   }
   const url = extrairUrl(resposta && resposta.data && resposta.data[0]);
   if (!url) throw new ErroAmigavel('A IA gratuita terminou, mas não devolveu a imagem.');
@@ -156,6 +185,29 @@ async function gerar({ categoria, pessoa, roupa, nome, token }) {
     }
   } catch { /* se não der, devolve o link */ }
   return { imagem: url, semToken };
+}
+
+// Tenta a IA preferida; se ela estiver fora do ar ou der erro, tenta a reserva.
+// Cota de GPU esgotada não muda de uma IA para outra (a cota é da conta), então aí não adianta tentar a reserva.
+async function gerar(dados) {
+  dados = { ...dados, prazo: Date.now() + TEMPO_LIMITE };   // o tempo total (todas as tentativas) cabe no limite da Vercel
+  const lista = ESPACOS[dados.categoria];
+  const erros = [];
+  for (const espaco of lista) {
+    try {
+      const r = await gerarCom(espaco, dados);
+      return { ...r, ia: espaco, ...(erros.length ? { aviso: `A IA preferida não respondeu; usamos ${espaco}.` } : {}) };
+    } catch (e) {
+      if (!(e instanceof ErroAmigavel)) throw e;
+      erros.push(e);
+      const semSaida = /cota|demorou demais|grande demais|inválid|não permitido/i.test(e.message);
+      if (semSaida || espaco === lista[lista.length - 1] || dados.prazo - Date.now() < 60000) break;
+      console.log(`IA ${espaco} falhou, tentando a reserva:`, e.message.slice(0, 200));
+    }
+  }
+  const ultimo = erros[erros.length - 1];
+  if (erros.length > 1) ultimo.message += ` (A IA preferida também falhou: ${erros[0].message.slice(0, 160)})`;
+  throw ultimo;
 }
 
 module.exports = async function handler(req, res) {
