@@ -1601,6 +1601,7 @@
           categoria: roupa.categoria,
           nome: roupa.nome,
           pessoa: /^https?:/i.test(pessoa) ? pessoa : await comoDataUrl(pessoa),
+          preferencia: roupa.categoria === 'bottoms' && estado.provador.iaBaixo === 'leffa' ? 'leffa' : undefined,
           roupa: roupa.tipo === 'catalogo' && ehFotoUnsplash(roupa.imagem) ? { url: roupa.imagem } : { imagem: await comoDataUrl(roupa.imagem) },
           token: estado.provador.hf && estado.provador.hf.token ? undefined : (token || undefined)
         })
@@ -1641,6 +1642,7 @@
     // Peça única: Leffa primeiro (a máscara dele cobre o corpo todo, com as pernas); OOTDiffusion de reserva
     const lista = roupa.categoria === 'tops' ? [PROVADOR.ESPACO_CIMA]
       : roupa.categoria === 'one-pieces' ? [PROVADOR.ESPACO_VESTIDO, PROVADOR.ESPACO_CORPO]
+      : estado.provador.iaBaixo === 'leffa' ? [PROVADOR.ESPACO_VESTIDO, PROVADOR.ESPACO_CORPO]   // teste: calças no Leffa
       : [PROVADOR.ESPACO_CORPO];
     let ultimoErro;
     for (const espaco of lista) {
@@ -1694,7 +1696,7 @@
         scale: 2.5,
         seed: 42,
         vt_model_type: 'dress_code',   // modelo treinado com vestidos e peças inteiras
-        vt_garment_type: 'dresses',    // máscara do corpo todo, incluindo as pernas
+        vt_garment_type: roupa.categoria === 'bottoms' ? 'lower_body' : 'dresses',   // máscara inclui as pernas
         vt_repaint: false
       });
     } else {
@@ -2076,6 +2078,7 @@
             <button class="botao" data-mia="salvar">⬇️ Salvar imagem</button>
             <button class="botao leve" data-mia="look">➕ Montar look completo</button>
             <button class="botao leve" data-mia="gerar">🔄 Gerar novamente</button>
+            ${CATEGORIA_TRYON[mia.peca.categoria] === 'bottoms' ? `<button class="botao leve" data-mia="trocar-ia">🔁 Testar com ${estado.provador.iaBaixo === 'leffa' ? 'a OOTDiffusion' : 'o Leffa'} (comparar IAs)</button>` : ''}
             <button class="botao leve" data-mia="nova-foto">🧍‍♀️ Usar outra foto</button>
             <button class="botao leve" data-mia="fechar">Fechar</button>
           </div>
@@ -2140,6 +2143,10 @@
     if (acao === 'galeria') $('#miaGaleria').click();
     if (acao === 'remover') { mia.pessoa = null; renderModalIA(); }
     if (acao === 'gerar') gerarMia();
+    if (acao === 'trocar-ia') {   // teste: alterna a IA das partes de baixo entre OOTDiffusion e Leffa
+      estado.provador.iaBaixo = estado.provador.iaBaixo === 'leffa' ? 'ootd' : 'leffa';
+      gerarMia();
+    }
     if (acao === 'cancelar') { mia.tentativa++; mia.gerando = false; mia.etapa = 'enviar'; renderModalIA(); }
     if (acao === 'salvar') salvarImagem(mia.resultado.imagem);
     if (acao === 'nova-foto') { mia.pessoa = null; mia.etapa = 'enviar'; renderModalIA(); $('#miaGaleria').click(); }
