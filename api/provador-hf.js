@@ -136,7 +136,7 @@ function pedidoDaIA(espaco, app, categoria, fotoPessoa, fotoRoupa, nome) {
       scale: 2.5,
       seed: 42,
       vt_model_type: 'dress_code',   // modelo treinado com vestidos e peças inteiras
-      vt_garment_type: 'dresses',    // máscara do corpo todo, incluindo as pernas
+      vt_garment_type: categoria === 'bottoms' ? 'lower_body' : 'dresses',   // máscara inclui as pernas
       vt_repaint: false
     });
   }
@@ -191,7 +191,10 @@ async function gerarCom(espaco, { categoria, pessoa, roupa, nome, token, prazo }
 // Cota de GPU esgotada não muda de uma IA para outra (a cota é da conta), então aí não adianta tentar a reserva.
 async function gerar(dados) {
   dados = { ...dados, prazo: Date.now() + TEMPO_LIMITE };   // o tempo total (todas as tentativas) cabe no limite da Vercel
-  const lista = ESPACOS[dados.categoria];
+  // Teste pedido pelo site: calças no Leffa (com a OOTDiffusion de reserva)
+  const lista = dados.categoria === 'bottoms' && dados.preferencia === 'leffa'
+    ? ['franciszzj/Leffa', 'levihsu/OOTDiffusion']
+    : ESPACOS[dados.categoria];
   const erros = [];
   for (const espaco of lista) {
     try {
@@ -240,7 +243,7 @@ module.exports = async function handler(req, res) {
     const tokenSite = typeof corpo.token === 'string' && /^hf_[A-Za-z0-9]{10,}$/.test(corpo.token) ? corpo.token : null;
     const token = process.env.HF_TOKEN || tokenSite;
 
-    const r = await gerar({ categoria: corpo.categoria, pessoa: corpo.pessoa, roupa: corpo.roupa, nome: corpo.nome, token });
+    const r = await gerar({ categoria: corpo.categoria, pessoa: corpo.pessoa, roupa: corpo.roupa, nome: corpo.nome, token, preferencia: corpo.preferencia === 'leffa' ? 'leffa' : null });
     return res.status(200).json(r);
   } catch (e) {
     if (e instanceof ErroAmigavel) return res.status(e.status).json({ erro: e.message });
