@@ -589,7 +589,7 @@
     { id: 'cal-01', nome: 'Calça jeans azul clássica', categoria: 'Calças', cores: ['Azul'], tamanhos: ['36','38','40','42','44','46'], estilo: 'Casual', descricao: 'Jeans de lavagem média, combina com praticamente tudo.', foto: '1602293589930-45aad59ba3ab', credito: 'blue-denim-jeans-on-brown-clothes-hanger-EtOMMg1nSR8', enquadrar: 'contain' },
     { id: 'cal-02', nome: 'Calça jeans preta', categoria: 'Calças', cores: ['Preto'], tamanhos: ['36','38','40','42','44'], estilo: 'Básico', descricao: 'Jeans escuro que funciona do passeio ao jantar.', foto: '1718252540617-6ecda2b56b57', credito: 'a-pair-of-black-jeans-on-a-white-background-muo8Zdkz_4w', enquadrar: 'contain' },
     { id: 'cal-03', nome: 'Calça jeans lavagem clara', categoria: 'Calças', cores: ['Azul'], tamanhos: ['36','38','40','42','44','46'], estilo: 'Casual', descricao: 'Lavagem clara, perfeita para looks de verão.', foto: '1714143136372-ddaf8b606da7', credito: 'a-pair-of-blue-jeans-on-a-white-background-9yoXrG6Er_g', enquadrar: 'contain' },
-    { id: 'cal-04', nome: 'Calças jeans em três lavagens', categoria: 'Calças', cores: ['Azul','Preto','Cinza'], tamanhos: ['36','38','40','42','44'], estilo: 'Casual', descricao: 'Opções de jeans em tons diferentes para variar os looks.', foto: '1542272604-787c3835535d', credito: 'three-assorted-color-denim-bottoms-m1m2EZOZVwA' },
+    { id: 'cal-04', nome: 'Calças jeans em três lavagens', categoria: 'Calças', cores: ['Azul','Preto','Cinza'], tamanhos: ['36','38','40','42','44'], estilo: 'Casual', descricao: 'Opções de jeans em tons diferentes para variar os looks.', foto: '1542272604-787c3835535d', credito: 'three-assorted-color-denim-bottoms-m1m2EZOZVwA', avisoFoto: '⚠️ A foto desta peça mostra três calças juntas. A IA do provador precisa de uma peça só na foto, então o resultado pode sair misturado. Para testar, prefira as outras calças jeans.' },
 
     // ----- Vestidos -----
     { id: 'ves-01', nome: 'Vestido vermelho sem manga', categoria: 'Vestidos', cores: ['Vermelho'], tamanhos: ['PP','P','M','G','GG'], estilo: 'Festa', descricao: 'Vestido vibrante para festas e ocasiões especiais.', foto: '1595777457583-95e059d581b8', credito: 'woman-in-red-sleeveless-dress-standing-on-gray-concrete-floor-during-daytime-tyfqOL1FAQc', comModelo: true },
@@ -639,6 +639,7 @@
   const urlFoto = (p, w = 700) => p.arquivo ? p.arquivo : `https://images.unsplash.com/photo-${p.foto}?auto=format&fit=crop&w=${w}&q=75`;
   // Peças cuja foto mostra uma pessoa usando a roupa (a IA do provador entende melhor a peça sozinha)
   const AVISO_MODELO = '⚠️ A foto desta peça mostra uma pessoa usando a roupa. A IA do provador entende muito melhor a peça sozinha, de frente e em fundo liso, então o resultado pode sair incompleto.';
+  const avisoDaFoto = (p) => p.avisoFoto || (p.comModelo ? AVISO_MODELO : '');
   const NOME_IA = { 'yisol/IDM-VTON': 'IDM-VTON', 'levihsu/OOTDiffusion': 'OOTDiffusion', 'franciszzj/Leffa': 'Leffa' };
   const ehFotoUnsplash = (src) => /^https:\/\/images\.unsplash\.com\//.test(String(src));
   const urlCredito = (p) => `https://unsplash.com/photos/${p.credito}`;
@@ -1297,7 +1298,7 @@
           <small>${e.titulo}</small>
           <strong>${r ? esc(r.nome) : 'Vazio'}</strong>
           <span class="dica">${r ? (r.tipo === 'catalogo' ? 'Do catálogo' : 'Foto enviada por você') : esc(e.exemplo)}</span>
-          ${r && r.tipo === 'catalogo' && r.peca.comModelo ? `<span class="aviso-modelo" title="${esc(AVISO_MODELO)}">⚠️ Foto com modelo: o resultado pode sair incompleto</span>` : ''}
+          ${r && r.tipo === 'catalogo' && avisoDaFoto(r.peca) ? `<span class="aviso-modelo" title="${esc(avisoDaFoto(r.peca))}">⚠️ ${r.peca.comModelo ? 'Foto com modelo' : 'Foto com várias peças'}: o resultado pode sair incompleto</span>` : ''}
           <div class="acoes-foto">${botoes}</div>
         </div>
       </div>`;
@@ -2028,7 +2029,7 @@
           <h3><span class="mia-passo">1</span> Roupa selecionada</h3>
           <div class="mia-foto">${fotoHTML(p, 900)}</div>
           <span class="mia-nome">${esc(p.nome)}</span>
-          ${p.comModelo ? `<span class="aviso-modelo">${AVISO_MODELO}</span>` : ''}
+          ${avisoDaFoto(p) ? `<span class="aviso-modelo">${avisoDaFoto(p)}</span>` : ''}
         </div>
         <div class="mia-bloco">
           <h3><span class="mia-passo">2</span> Sua foto de corpo</h3>
